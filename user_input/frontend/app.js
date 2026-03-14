@@ -134,6 +134,14 @@ function togglePlay() {
         if (document.getElementById('miniPlayIcon'))
             document.getElementById('miniPlayIcon').textContent = '❚❚';
 
+        // Start emotion tracking if webcam is active
+        if (typeof cvUI !== 'undefined' && cvUI.webcamActive) {
+            const video = document.getElementById('cvVideo');
+            if (video && typeof startEmotionTracking === 'function') {
+                startEmotionTracking(video);
+            }
+        }
+
         // Show lyrics overlay
         showLyricsOverlay();
     } else {
@@ -186,6 +194,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('pauseIcon').style.display = 'none';
         document.getElementById('albumArt').classList.remove('spinning');
         hideLyricsOverlay();
+
+        // Emotion analysis on song end
+        if (typeof stopEmotionTracking === 'function') {
+            stopEmotionTracking();
+        }
+        if (typeof analyzeEmotionTimeline === 'function' && typeof emotionTracker !== 'undefined' && emotionTracker.timeline.length > 5) {
+            const analysis = analyzeEmotionTimeline();
+            if (analysis) {
+                if (typeof renderEmotionHeatmap === 'function') renderEmotionHeatmap();
+                if (typeof showEmotionRefinementPrompt === 'function') showEmotionRefinementPrompt(analysis);
+            }
+        }
     });
 });
 
@@ -318,6 +338,21 @@ function reset() {
     hideLyricsOverlay();
     document.getElementById('waveformProgress').style.width = '0%';
     document.getElementById('timeDisplay').textContent = '0:00';
+
+    // Reset CV features
+    if (typeof resetEmotionTracker === 'function') resetEmotionTracker();
+    if (typeof stopWebcam === 'function') stopWebcam();
+    if (typeof hideEmotionRefinementPrompt === 'function') hideEmotionRefinementPrompt();
+    if (typeof resetAllEffects === 'function') resetAllEffects();
+    const heatmap = document.getElementById('emotionHeatmap');
+    if (heatmap) heatmap.style.display = 'none';
+    const btn = document.getElementById('webcamToggleBtn');
+    if (btn) {
+        btn.classList.remove('active');
+        const btnText = btn.querySelector('.btn-text');
+        if (btnText) btnText.textContent = 'Camera';
+    }
+
     showScreen('inputScreen');
 }
 

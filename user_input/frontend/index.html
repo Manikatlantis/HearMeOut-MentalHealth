@@ -25,6 +25,62 @@
         </div>
     </div>
 
+    <!-- WEBCAM OVERLAY -->
+    <div id="webcamOverlay" class="webcam-overlay">
+        <video id="cvVideo" class="cv-video" playsinline muted></video>
+        <span id="emotionBadge" class="emotion-badge" style="display:none"></span>
+    </div>
+
+    <!-- EFFECT INDICATORS -->
+    <div id="effectIndicators" class="effect-indicators">
+        <div class="fx-pill" id="fx-volume"><span class="fx-label">Vol</span><span class="fx-val">1.0</span></div>
+        <div class="fx-pill" id="fx-filter"><span class="fx-label">Filter</span><span class="fx-val">20000Hz</span></div>
+        <div class="fx-pill" id="fx-distortion"><span class="fx-label">Dist</span><span class="fx-val">0</span></div>
+        <div class="fx-pill" id="fx-delay"><span class="fx-label">Delay</span><span class="fx-val">0.00s</span></div>
+        <div class="fx-pill" id="fx-reverb"><span class="fx-label">Reverb</span><span class="fx-val">0%</span></div>
+        <div class="fx-pill" id="fx-pan"><span class="fx-label">Pan</span><span class="fx-val">0.00</span></div>
+    </div>
+
+    <!-- GESTURE GUIDE -->
+    <div id="gestureGuide" class="gesture-guide">
+        <div class="gesture-guide-header">
+            <h3>Gesture Controls</h3>
+            <button class="gesture-guide-close" onclick="toggleGestureGuide()">✕</button>
+        </div>
+        <div class="gesture-list">
+            <div class="gesture-item"><span class="gesture-icon">✋↑</span><span>Raise hand — Volume up</span></div>
+            <div class="gesture-item"><span class="gesture-icon">✋↓</span><span>Lower hand — Volume down</span></div>
+            <div class="gesture-item"><span class="gesture-icon">🤏</span><span>Pinch — Filter sweep</span></div>
+            <div class="gesture-item"><span class="gesture-icon">✊</span><span>Fist — Distortion</span></div>
+            <div class="gesture-item"><span class="gesture-icon">🖐</span><span>Open palm — Reset all</span></div>
+            <div class="gesture-item"><span class="gesture-icon">↔️</span><span>Spread hands — Stereo widen</span></div>
+            <div class="gesture-item"><span class="gesture-icon">👋</span><span>Wave — Reverb</span></div>
+            <div class="gesture-item"><span class="gesture-icon">🔄</span><span>Circular — Delay/echo</span></div>
+        </div>
+    </div>
+
+    <!-- EMOTION REFINEMENT MODAL -->
+    <div id="refinementModal" class="refinement-modal">
+        <div class="refinement-content glass">
+            <h3>Emotion-Enhanced Remix</h3>
+            <p id="refinementDesc" class="refinement-desc">We analyzed your emotional response to the song.</p>
+            <div id="emotionHeatmap" class="emotion-heatmap" style="display:none">
+                <canvas id="heatmapCanvas" height="20"></canvas>
+                <div class="heatmap-legend">
+                    <span class="legend-warm">Moved</span>
+                    <span class="legend-cool">Calm</span>
+                    <span class="legend-gray">Neutral</span>
+                </div>
+            </div>
+            <div class="refinement-actions">
+                <button class="refinement-accept" onclick="acceptEmotionRefinement()">
+                    <span class="btn-text">Create Enhanced Version</span>
+                </button>
+                <button class="refinement-decline" onclick="declineEmotionRefinement()">No thanks</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN APP -->
     <div id="app" class="app">
 
@@ -144,12 +200,36 @@
                     </div>
                 </div>
 
+                <!-- CV Controls -->
+                <div class="cv-controls">
+                    <button class="cv-btn glass" id="webcamToggleBtn" onclick="toggleWebcam()">
+                        <span class="cv-icon">📷</span>
+                        <span class="btn-text">Camera</span>
+                    </button>
+                    <button class="cv-btn glass" onclick="toggleGestureGuide()">
+                        <span class="cv-icon">?</span>
+                        <span class="btn-text">Gestures</span>
+                    </button>
+                </div>
+
                 <button class="new-btn glass" onclick="reset()">+ New Song</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- CV libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+
+    <!-- Feature modules -->
+    <script src="/static/audio-effects.js"></script>
+    <script src="/static/emotion-tracker.js"></script>
+    <script src="/static/gesture-mixer.js"></script>
+    <script src="/static/cv-ui.js"></script>
+
     <script src="/static/background.js"></script>
     <script src="/static/app.js"></script>
 </body>

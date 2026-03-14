@@ -311,8 +311,14 @@ function connectAudioAnalyser(audioElement) {
         analyserNode = audioCtx.createAnalyser();
         analyserNode.fftSize = 256;
         dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-        source.connect(analyserNode);
-        analyserNode.connect(audioCtx.destination);
+
+        // Use effect chain if available, otherwise direct connection
+        if (typeof initEffectChain === 'function') {
+            initEffectChain(source, analyserNode, audioCtx);
+        } else {
+            source.connect(analyserNode);
+            analyserNode.connect(audioCtx.destination);
+        }
         sourceConnected = true;
     } catch (e) {
         console.warn('Audio analyser failed:', e);
@@ -342,9 +348,16 @@ function animate() {
     const energy = getAudioEnergy();
     const bass = getBassEnergy();
 
-    // Camera follows mouse
-    camera.position.x += (mouseX * 100 - camera.position.x) * 0.02;
-    camera.position.y += (-mouseY * 60 - camera.position.y) * 0.02;
+    // Camera follows mouse (or hand position if tracking)
+    let camTargetX = mouseX;
+    let camTargetY = mouseY;
+    const handPos = (typeof getHandPositionForThreeJS === 'function') ? getHandPositionForThreeJS() : null;
+    if (handPos) {
+        camTargetX = handPos.x;
+        camTargetY = handPos.y;
+    }
+    camera.position.x += (camTargetX * 100 - camera.position.x) * 0.02;
+    camera.position.y += (-camTargetY * 60 - camera.position.y) * 0.02;
     camera.lookAt(scene.position);
 
     // Animate particles
@@ -385,6 +398,48 @@ function animate() {
 
         particles.rotation.y += 0.0005 + energy * 0.002;
         particles.rotation.x += 0.0002;
+
+        // Hand-driven particle attraction (magnetic effect)
+        if (handPos) {
+            const hx = handPos.x * 400;
+            const hy = handPos.y * 300;
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const dx = hx - positions[i3];
+                const dy = hy - positions[i3 + 1];
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 300 && dist > 10) {
+                    const force = 0.8 / (dist * 0.1);
+                    positions[i3] += (dx / dist) * force;
+                    positions[i3 + 1] += (dy / dist) * force;
+                }
+            }
+        }
+
+        // Effect-driven visual modifications
+        const fxValues = (typeof getEffectValues === 'function') ? getEffectValues() : null;
+        if (fxValues) {
+            // Filter active → shift to cooler colors
+            if (fxValues.filterFreq < 15000) {
+                const filterIntensity = 1 - fxValues.filterFreq / 20000;
+                const colors = particles.geometry.attributes.color.array;
+                for (let i = 0; i < Math.min(100, count); i++) {
+                    const i3 = i * 3;
+                    colors[i3] *= (1 - filterIntensity * 0.3);
+                    colors[i3 + 2] = Math.min(1, colors[i3 + 2] + filterIntensity * 0.02);
+                }
+                particles.geometry.attributes.color.needsUpdate = true;
+            }
+            // Distortion → chaotic velocities
+            if (fxValues.distortionAmount > 5) {
+                const chaos = fxValues.distortionAmount / 100;
+                for (let i = 0; i < count; i++) {
+                    const i3 = i * 3;
+                    velocities[i3] += (Math.random() - 0.5) * chaos * 0.5;
+                    velocities[i3 + 1] += (Math.random() - 0.5) * chaos * 0.5;
+                }
+            }
+        }
     }
 
     // Spawn musical notes during lyrics playback
