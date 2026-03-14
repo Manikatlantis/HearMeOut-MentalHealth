@@ -1,6 +1,6 @@
 """Compatibility wrapper. The orchestrator is now the primary entry point."""
 
-from orchestrator import Orchestrator
+from pipeline.orchestrator import Orchestrator
 
 
 def run_pipeline(prompt):

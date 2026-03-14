@@ -2,7 +2,7 @@ import json
 import os
 import anthropic
 from dotenv import load_dotenv
-from context import MusicalFeatures
+from pipeline.context import MusicalFeatures
 
 load_dotenv(override=True)
 

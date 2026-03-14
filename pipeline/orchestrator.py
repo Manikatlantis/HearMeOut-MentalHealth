@@ -1,8 +1,8 @@
-from context import PipelineContext
-from narrative import expand_narrative
-from analyzer import extract_musical_features
-from generator import generate_music
-from pdf_generator import generate_pdf
+from pipeline.context import PipelineContext
+from pipeline.narrative import expand_narrative
+from pipeline.analyzer import extract_musical_features
+from pipeline.generator import generate_music
+from pipeline.pdf_generator import generate_pdf
 
 
 class Orchestrator:
@@ -38,13 +38,13 @@ class Orchestrator:
         return self
 
     def generate_lyrics(self):
-        from lyrics_generator import generate_lyrics
+        from pipeline.lyrics_generator import generate_lyrics
         generate_lyrics(self.context)
         return self
 
     def generate_audio(self):
         if self.generator == "eleven":
-            from eleven_generator import generate_music_eleven
+            from pipeline.eleven_generator import generate_music_eleven
             generate_music_eleven(self.context)
         else:
             generate_music(self.context)
@@ -52,7 +52,7 @@ class Orchestrator:
 
     def align_lyrics(self):
         try:
-            from lyrics_aligner import align_lyrics
+            from pipeline.lyrics_aligner import align_lyrics
             self.context.word_alignment = align_lyrics(
                 audio_path=self.context.audio_file,
                 lyrics_text=self.context.lyrics,

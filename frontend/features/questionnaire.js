@@ -179,6 +179,9 @@ const questionnaire = {
             html += `<div class="recap-section"><span class="recap-section-icon">&#127911;</span><p>${this.escapeHtml(recap.emotion_insight)}</p></div>`;
         }
 
+        // Emotion arc visualization placeholder
+        html += `<div id="emotionArcContainer"></div>`;
+
         if (recap.pre_score !== null && recap.pre_score !== undefined) {
             html += `
                 <div class="recap-score-row">
@@ -210,6 +213,23 @@ const questionnaire = {
         `;
         html += `</div>`;
         el.innerHTML = html;
+
+        // Render emotion arc visualization
+        if (typeof emotionArc !== 'undefined') {
+            const arcContainer = document.getElementById('emotionArcContainer');
+            if (arcContainer) {
+                const timeline = (typeof emotionTracker !== 'undefined') ? emotionTracker.timeline : [];
+                const wa = (typeof currentData !== 'undefined' && currentData) ? currentData.word_alignment : null;
+                const player = document.getElementById('audioPlayer');
+                const dur = player ? player.duration : 30;
+                emotionArc.render(arcContainer, {
+                    timeline: timeline,
+                    wordAlignment: wa,
+                    duration: isFinite(dur) ? dur : 30,
+                    emotionInsight: recap.emotion_insight || null
+                });
+            }
+        }
     },
 
     showInterpretation(data) {
