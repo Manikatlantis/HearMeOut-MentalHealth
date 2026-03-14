@@ -6,6 +6,7 @@ let currentData = null;
 let isPlaying = false;
 let lyricsTimeline = [];
 let lyricsAnimFrame = null;
+let currentSessionId = null;
 
 // ---- User Identity (anonymous UUID in localStorage) ----
 function getUserId() {
@@ -30,6 +31,14 @@ function showScreen(id) {
     screen.style.animation = 'none';
     screen.offsetHeight; // reflow
     screen.style.animation = '';
+
+    // Render questionnaire questions when screens are shown
+    if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
+        questionnaire.renderQuestions('preQuestions');
+    }
+    if (id === 'questionnairePostScreen' && typeof questionnaire !== 'undefined') {
+        questionnaire.renderQuestions('postQuestions');
+    }
 }
 
 // ---- Generate Song ----
@@ -44,15 +53,24 @@ async function generate() {
     animateProgress();
 
     try {
+        currentSessionId = (typeof questionnaire !== 'undefined' && questionnaire.sessionId)
+            ? questionnaire.sessionId
+            : 'session_' + Date.now();
         const response = await fetch('/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, user_id: getUserId() })
+            body: JSON.stringify({
+                text,
+                session_id: currentSessionId,
+                user_id: getUserId()
+            })
         });
 
         if (!response.ok) throw new Error('Generation failed');
 
         currentData = await response.json();
+        // Update currentSessionId from server response (server may generate a new one)
+        if (currentData.session_id) currentSessionId = currentData.session_id;
         displayResults(currentData);
         showScreen('playerScreen');
 
@@ -219,6 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof renderEmotionHeatmap === 'function') renderEmotionHeatmap();
                 if (typeof showEmotionRefinementPrompt === 'function') showEmotionRefinementPrompt(analysis);
             }
+        }
+
+        // Show post-session questionnaire
+        if (typeof questionnaire !== 'undefined' && !questionnaire.postAnswers) {
+            setTimeout(() => showScreen('questionnairePostScreen'), 1500);
         }
     });
 });
@@ -491,7 +514,7 @@ async function iterate() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 feedback,
-                session_id: currentData ? currentData.session_id : 'default',
+                session_id: currentSessionId || (currentData ? currentData.session_id : 'default'),
                 user_id: getUserId()
             })
         });

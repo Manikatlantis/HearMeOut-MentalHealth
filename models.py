@@ -41,6 +41,7 @@ class ChatRequest(BaseModel):
     user_id: str
     session_id: Optional[str] = None
     message: str
+    history: Optional[list] = None
 
 
 # === IGOR: Diary ===

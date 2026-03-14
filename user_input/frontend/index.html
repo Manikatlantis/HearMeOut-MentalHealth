@@ -81,8 +81,100 @@
         </div>
     </div>
 
+    <!-- ETHICS DISCLAIMER MODAL -->
+    <div id="ethicsModal" class="ethics-modal">
+        <div class="ethics-content glass">
+            <h2 class="ethics-title">Before We Begin</h2>
+            <div class="ethics-body">
+                <div class="ethics-item">
+                    <span class="ethics-icon">&#9834;</span>
+                    <div>
+                        <strong>AI-Powered Music Creation</strong>
+                        <p>This app uses Claude AI to generate narratives, lyrics, and musical compositions based on your story. Your input helps shape a unique, personalized song.</p>
+                    </div>
+                </div>
+                <div class="ethics-item">
+                    <span class="ethics-icon">&#128274;</span>
+                    <div>
+                        <strong>Your Privacy</strong>
+                        <p>No data is permanently stored beyond your browser session. Your stories and responses are processed in real-time and not retained on our servers.</p>
+                    </div>
+                </div>
+                <div class="ethics-item">
+                    <span class="ethics-icon">&#128247;</span>
+                    <div>
+                        <strong>Computer Vision (Optional)</strong>
+                        <p>Facial emotion tracking and hand gesture controls are entirely opt-in. All CV processing happens locally in your browser — no video is ever sent to any server.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="ethics-optout">
+                <label class="ethics-toggle-label">
+                    <input type="checkbox" id="cvOptOutToggle">
+                    <span class="ethics-toggle-text">Opt out of camera/CV features</span>
+                </label>
+            </div>
+            <button class="ethics-accept-btn" onclick="ethics.accept()">
+                <span class="btn-text">I Understand</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CHATBOT PANEL -->
+    <div id="chatbotPanel" class="chatbot-panel">
+        <div class="chatbot-header">
+            <h3>Music Therapy Companion</h3>
+            <button class="chatbot-close" onclick="chatbot.close()">&#10005;</button>
+        </div>
+        <div id="chatMessages" class="chatbot-messages">
+            <div class="chat-welcome">
+                <p>Hi there! I'm your music therapy companion. Tell me about what you're feeling, and I'll help you shape it into a story for your song.</p>
+            </div>
+        </div>
+        <div id="useForSongBtn" class="chatbot-use-song" style="display:none" onclick="chatbot.useForSong()">
+            <span>&#9835; Use this for my song</span>
+        </div>
+        <div class="chatbot-input-row">
+            <textarea id="chatInput" class="chatbot-input" placeholder="Share how you're feeling..." onkeydown="chatbot.handleKeydown(event)" rows="1"></textarea>
+            <button class="chatbot-send" onclick="chatbot.send()">&#10148;</button>
+        </div>
+    </div>
+
     <!-- MAIN APP -->
     <div id="app" class="app">
+
+        <!-- PRE-SESSION QUESTIONNAIRE -->
+        <div id="questionnairePreScreen" class="screen">
+            <div class="q-card glass">
+                <h2 class="q-title">How Are You Feeling?</h2>
+                <p class="q-subtitle">Take a moment to check in with yourself before we create your music.</p>
+                <div id="preQuestions" class="q-questions"></div>
+                <p id="preWarning" class="q-warning" style="display:none"></p>
+                <button class="q-submit-btn" onclick="questionnaire.submitPre()">
+                    <span class="btn-text">Continue to Story</span>
+                    <span class="btn-icon">&rarr;</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- POST-SESSION QUESTIONNAIRE -->
+        <div id="questionnairePostScreen" class="screen">
+            <div class="q-card glass">
+                <h2 class="q-title">How Are You Feeling Now?</h2>
+                <p class="q-subtitle">Let's check in again after experiencing your music.</p>
+                <div id="postQuestions" class="q-questions"></div>
+                <p id="postWarning" class="q-warning" style="display:none"></p>
+                <button class="q-submit-btn" onclick="questionnaire.submitPost()">
+                    <span class="btn-text">See Your Journey</span>
+                    <span class="btn-icon">&rarr;</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- QUESTIONNAIRE RESULT -->
+        <div id="questionnaireResultScreen" class="screen">
+            <div id="questionnaireResult" class="q-result"></div>
+        </div>
 
         <!-- INPUT SCREEN -->
         <div id="inputScreen" class="screen active">
@@ -94,6 +186,10 @@
 
             <div class="input-card glass">
                 <textarea id="storyInput" placeholder="A young woman gets married after years of waiting. The celebration is joyful and festive, full of dancing and love..."></textarea>
+                <button class="chatbot-trigger glass" onclick="chatbot.toggle()">
+                    <span class="cv-icon">&#128172;</span>
+                    <span class="btn-text">Need help? Chat with our AI companion</span>
+                </button>
                 <button id="generateBtn" onclick="generate()">
                     <span class="btn-text">Generate Song</span>
                     <span class="btn-icon">→</span>
@@ -274,6 +370,9 @@
     <script src="/static/cv-ui.js"></script>
 
     <script src="/static/background.js"></script>
+    <script src="/static/ethics.js"></script>
+    <script src="/static/questionnaire.js"></script>
+    <script src="/static/chatbot.js"></script>
     <script src="/static/app.js"></script>
     <script src="/static/download.js"></script>
     <script src="/static/history.js"></script>

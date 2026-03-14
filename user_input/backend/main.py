@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import uuid
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -9,12 +10,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from orchestrator import Orchestrator
-from models import ProcessRequest, FeedbackRequest, MeditationRequest
+from models import ProcessRequest, FeedbackRequest, MeditationRequest, ChatRequest
 from db import (
     ensure_user, save_session, get_user_sessions, get_session,
-    init_db,
+    get_db, save_questionnaire, get_questionnaire_comparison,
+    save_chat_message, get_chat_history as db_get_chat_history,
 )
+import anthropic
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 app = FastAPI()
 
@@ -232,7 +239,106 @@ def meditation(request: MeditationRequest):
 
 
 # === SYED: Questionnaire + Ethics + Chatbot ===
-# (Syed will add endpoints here)
+
+class QuestionnaireRequest(BaseModel):
+    user_id: str
+    session_id: str
+    phase: str  # "pre" or "post"
+    answers: list[int]  # list of 9 scores (0-3)
+
+
+@app.post("/api/questionnaire")
+def submit_questionnaire(req: QuestionnaireRequest):
+    """Save pre or post questionnaire responses."""
+    total_score = sum(req.answers)
+
+    # Use Manik's db helper
+    save_questionnaire(
+        user_id=req.user_id,
+        session_id=req.session_id,
+        timing=req.phase,
+        responses=req.answers,
+        total_score=total_score,
+    )
+
+    result = {"status": "saved", "phase": req.phase, "total_score": total_score}
+
+    # If this is a post-questionnaire, compute delta from pre
+    if req.phase == "post":
+        comparison = get_questionnaire_comparison(req.user_id, req.session_id)
+        if comparison.get("delta") is not None:
+            result["delta"] = comparison["delta"]
+            result["pre_score"] = comparison["pre"]["total_score"]
+            result["post_score"] = comparison["post"]["total_score"]
+
+    return result
+
+
+@app.get("/api/questionnaire/{user_id}/{session_id}")
+def get_questionnaire(user_id: str, session_id: str):
+    """Get pre/post comparison for a session."""
+    return get_questionnaire_comparison(user_id, session_id)
+
+
+@app.post("/api/chat")
+def chat(req: ChatRequest):
+    """Send a message to the Claude chatbot and get a response."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return {"reply": "Chat service is currently unavailable.", "summary": None}
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    system_prompt = (
+        "You are a compassionate music therapy assistant for the app 'Hear Me Out'. "
+        "Help the user articulate their emotions and story for music generation. "
+        "Ask gentle follow-up questions to understand their feelings deeply. "
+        "When you feel you have enough context (after 2-3 exchanges), summarize their story "
+        "in a way that would work well as input for an AI music generator. "
+        "When you provide a summary, prefix it with 'STORY SUMMARY:' on its own line. "
+        "Do NOT provide medical advice, diagnoses, or clinical recommendations. "
+        "Keep responses warm, brief (2-3 sentences), and encouraging."
+    )
+
+    # Build message history for Claude
+    messages = []
+    if req.history:
+        for msg in req.history[-18:]:
+            if msg.get("role") in ("user", "assistant"):
+                messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Ensure the last message is the user's new message
+    if not messages or messages[-1]["content"] != req.message:
+        messages.append({"role": "user", "content": req.message})
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=512,
+        system=system_prompt,
+        messages=messages,
+    )
+
+    reply_text = response.content[0].text
+
+    # Save to DB using Manik's helper
+    save_chat_message(req.user_id, req.session_id, "user", req.message)
+    save_chat_message(req.user_id, req.session_id, "assistant", reply_text)
+
+    # Extract summary if present
+    summary = None
+    if "STORY SUMMARY:" in reply_text:
+        parts = reply_text.split("STORY SUMMARY:")
+        summary = parts[1].strip()
+
+    return {"reply": reply_text, "summary": summary}
+
+
+@app.get("/api/chat/history")
+def get_chat_history_endpoint(user_id: str):
+    """Get chat history for a user."""
+    rows = db_get_chat_history(user_id)
+    return {"messages": [{"role": r["role"], "content": r["content"]} for r in rows]}
+
 
 # === IGOR: Diary ===
 # (Igor will add endpoints here)
