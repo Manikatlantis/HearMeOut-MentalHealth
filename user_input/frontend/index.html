@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hear Me Out — AI Music Generator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Three.js background canvas -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Floating particles overlay -->
+    <div id="particleOverlay"></div>
+
+    <!-- LYRICS OVERLAY — fullscreen animated lyrics during playback -->
+    <div id="lyricsOverlay" class="lyrics-overlay hidden">
+        <button class="lyrics-close" onclick="hideLyricsOverlay()">✕</button>
+        <div id="lyricsLines" class="lyrics-lines"></div>
+        <div class="lyrics-mini-controls">
+            <button class="mini-play" onclick="togglePlay()">
+                <span id="miniPlayIcon">❚❚</span>
+            </button>
+            <span class="lyrics-mini-time" id="miniTime">0:00</span>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="app">
+
+        <!-- INPUT SCREEN -->
+        <div id="inputScreen" class="screen active">
+            <div class="hero">
+                <div class="logo-glow"></div>
+                <h1 class="title glitch" data-text="Hear Me Out">Hear Me Out</h1>
+                <p class="tagline">Tell your story. We'll make it sing.</p>
+            </div>
+
+            <div class="input-card glass">
+                <textarea id="storyInput" placeholder="A young woman gets married after years of waiting. The celebration is joyful and festive, full of dancing and love..."></textarea>
+                <button id="generateBtn" onclick="generate()">
+                    <span class="btn-text">Generate Song</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- LOADING SCREEN -->
+        <div id="loadingScreen" class="screen">
+            <div class="loader-container">
+                <div class="pulse-ring"></div>
+                <div class="pulse-ring delay-1"></div>
+                <div class="pulse-ring delay-2"></div>
+                <div class="loader-icon">♪</div>
+            </div>
+            <p class="loader-text" id="loaderText">Crafting your narrative...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- PLAYER SCREEN -->
+        <div id="playerScreen" class="screen">
+            <div class="player-card glass">
+                <div class="album-art" id="albumArt">
+                    <div class="vinyl-ring"></div>
+                    <div class="vinyl-ring r2"></div>
+                    <div class="vinyl-ring r3"></div>
+                    <div class="vinyl-label">♪</div>
+                </div>
+
+                <div class="track-info">
+                    <h2 class="track-title" id="trackTitle">Your Song</h2>
+                    <div class="track-tags" id="trackTags"></div>
+                </div>
+
+                <div class="audio-controls">
+                    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+                    <button class="play-btn" id="playBtn" onclick="togglePlay()">
+                        <svg id="playIcon" viewBox="0 0 24 24" width="32" height="32">
+                            <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+                        </svg>
+                        <svg id="pauseIcon" viewBox="0 0 24 24" width="32" height="32" style="display:none">
+                            <rect x="5" y="3" width="4" height="18" fill="currentColor"/>
+                            <rect x="15" y="3" width="4" height="18" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <div class="waveform-bar" id="waveformBar" onclick="seekAudio(event)">
+                        <div class="waveform-progress" id="waveformProgress"></div>
+                        <canvas id="waveformCanvas" height="40"></canvas>
+                    </div>
+                    <span class="time-display" id="timeDisplay">0:00</span>
+                </div>
+
+                <div class="lyrics-section">
+                    <h3>Lyrics</h3>
+                    <div class="lyrics-static" id="lyricsStatic"></div>
+                </div>
+
+                <div class="narrative-section">
+                    <h3>Narrative</h3>
+                    <p class="narrative-text" id="narrativeText"></p>
+                </div>
+
+                <!-- Iterate Panel -->
+                <div class="iterate-section">
+                    <button class="iterate-toggle glass" onclick="toggleIteratePanel()">
+                        <span class="iterate-icon">⟳</span> Remix & Iterate
+                    </button>
+                    <div id="iteratePanel" class="iterate-panel" style="display:none">
+                        <div class="iterate-controls">
+                            <div class="iterate-row">
+                                <label>Tempo (BPM)</label>
+                                <div class="iterate-input-group">
+                                    <input type="range" id="iterTempo" min="60" max="200" value="90" oninput="document.getElementById('iterTempoVal').textContent=this.value">
+                                    <span id="iterTempoVal" class="iter-val">90</span>
+                                </div>
+                            </div>
+                            <div class="iterate-row">
+                                <label>Mood</label>
+                                <div class="iterate-chips" id="moodChips"></div>
+                            </div>
+                            <div class="iterate-row">
+                                <label>Genre</label>
+                                <div class="iterate-chips" id="genreChips"></div>
+                            </div>
+                            <div class="iterate-row">
+                                <label>Instruments</label>
+                                <div class="iterate-chips" id="instrumentChips"></div>
+                            </div>
+                            <div class="iterate-row">
+                                <label>Dynamics</label>
+                                <div class="iterate-chips" id="dynamicsChips"></div>
+                            </div>
+                            <div class="iterate-row">
+                                <label>Additional notes</label>
+                                <textarea id="iterNotes" class="iterate-notes" placeholder="e.g. make it more upbeat, add a guitar solo, darker vibe..."></textarea>
+                            </div>
+                        </div>
+                        <button class="iterate-btn" onclick="iterate()">
+                            <span class="btn-text">Regenerate Song</span>
+                            <span class="btn-icon">⟳</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="new-btn glass" onclick="reset()">+ New Song</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/static/background.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
