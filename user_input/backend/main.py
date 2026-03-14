@@ -24,7 +24,12 @@ def serve_frontend():
 
 @app.get("/audio/{filename}")
 def serve_audio(filename: str):
-    file_path = PROJECT_ROOT / "output" / filename
+    # eleven_generator saves to output/ relative to CWD (this backend dir)
+    backend_dir = Path(__file__).resolve().parent
+    file_path = backend_dir / "output" / filename
+    if not file_path.exists():
+        # Fallback to project root output dir
+        file_path = PROJECT_ROOT / "output" / filename
     if not file_path.exists():
         return {"error": "File not found"}
     return FileResponse(file_path, media_type="audio/mpeg")
