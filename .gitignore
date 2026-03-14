@@ -4,3 +4,4 @@ __pycache__/
 output/
 music.wav
 *.wav
+data/

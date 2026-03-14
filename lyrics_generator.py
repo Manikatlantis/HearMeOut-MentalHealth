@@ -20,26 +20,36 @@ def generate_lyrics(context):
     prompt = f"""You are a professional songwriter. Based on the story/narrative and musical features below,
 write song lyrics with exactly this structure:
 
-[Verse]
-(2-4 lines)
+[Verse 1]
+(3-4 lines)
 
 [Chorus]
-(2-4 lines)
+(3-4 lines)
+
+[Verse 2]
+(3-4 lines)
+
+[Bridge]
+(2-3 lines)
 
 The lyrics should:
 - Match the mood ({features['mood']}), genre ({features['genre']}), and energy of the music
 - Tell the story from the narrative in a poetic, singable way
-- Be concise and catchy — suitable for a {features['duration']}s song
+- Be suitable for a {features['duration']}s song with full verse/chorus/bridge structure
 - Use natural phrasing that works with {features['tempo']} BPM tempo
+- Verse 1: introduce the story/emotion
+- Chorus: the emotional core, catchy and memorable
+- Verse 2: deepen the story, add new perspective
+- Bridge: emotional pivot or revelation
 
 Narrative/Story:
 {context.narrative}
 
-Return ONLY the lyrics with [Verse] and [Chorus] section markers. No other text."""
+Return ONLY the lyrics with [Verse 1], [Chorus], [Verse 2], [Bridge] section markers. No other text."""
 
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=512,
+        max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )
     context.lyrics = response.content[0].text.strip()

@@ -1133,4 +1133,253 @@ audio { display: none; }
     .effect-indicators { flex-wrap: wrap; max-width: 90vw; bottom: 140px; }
     .fx-pill { padding: 4px 8px; font-size: 10px; }
     .gesture-guide { width: 90vw; }
+    .history-panel { max-height: 300px; }
+    .meditation-card { padding: 24px; }
+    .player-actions { flex-direction: column; gap: 8px; }
+}
+
+/* === MANIK: History, Download, Meditation === */
+
+/* ---- Player Action Buttons (Download, Meditate) ---- */
+.player-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+.action-btn {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.action-btn:hover {
+    color: var(--text);
+    background: var(--glass-hover);
+    border-color: var(--amber);
+    box-shadow: 0 0 15px var(--amber-glow);
+}
+.action-icon {
+    font-size: 16px;
+}
+
+/* ---- History Panel ---- */
+.history-section {
+    margin-top: 24px;
+    width: 100%;
+}
+.history-toggle {
+    width: 100%;
+    padding: 12px 20px;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    border-radius: 12px;
+    background: rgba(167, 139, 250, 0.08);
+    color: var(--lavender);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+.history-toggle:hover {
+    background: rgba(167, 139, 250, 0.15);
+    border-color: var(--lavender);
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.25);
+}
+.history-icon {
+    font-size: 16px;
+}
+.history-panel {
+    margin-top: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+}
+.history-panel::-webkit-scrollbar { width: 4px; }
+.history-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.history-item {
+    padding: 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.history-item:hover {
+    background: var(--glass-hover);
+    border-color: var(--lavender);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+}
+.history-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.history-snippet {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+.history-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.history-tag {
+    padding: 3px 10px;
+    background: rgba(244, 114, 182, 0.08);
+    border: 1px solid rgba(244, 114, 182, 0.15);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--rose);
+}
+.history-tag:nth-child(even) {
+    background: rgba(45, 212, 191, 0.08);
+    border-color: rgba(45, 212, 191, 0.15);
+    color: var(--teal);
+}
+.history-replay-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    color: var(--lavender);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.history-replay-btn:hover {
+    background: rgba(167, 139, 250, 0.3);
+}
+.history-loading, .history-empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 24px;
+}
+
+/* ---- Meditation Screen ---- */
+.meditation-card {
+    padding: 40px;
+    text-align: center;
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.meditation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+.meditation-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--teal), var(--lavender));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.meditation-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #888;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.meditation-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+.meditation-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+}
+.meditation-breath-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    opacity: 0.4;
+    animation: meditationBreathe 6s ease-in-out infinite;
+}
+@keyframes meditationBreathe {
+    0%, 100% { transform: scale(0.8); opacity: 0.3; border-color: var(--teal); }
+    50% { transform: scale(1.3); opacity: 0.6; border-color: var(--lavender); }
+}
+.meditation-text {
+    font-size: 20px;
+    line-height: 1.8;
+    color: var(--text);
+    max-width: 480px;
+    transition: opacity 0.5s ease;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+}
+.meditation-progress-bar {
+    width: 200px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    margin: 30px auto;
+    overflow: hidden;
+}
+.meditation-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--teal), var(--lavender));
+    border-radius: 2px;
+    transition: width 0.8s ease;
+}
+.meditation-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.meditation-btn {
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+}
+.meditation-btn:hover {
+    color: var(--text);
+    background: var(--glass-hover);
 }

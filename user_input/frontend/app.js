@@ -7,6 +7,20 @@ let isPlaying = false;
 let lyricsTimeline = [];
 let lyricsAnimFrame = null;
 
+// ---- User Identity (anonymous UUID in localStorage) ----
+function getUserId() {
+    let uid = localStorage.getItem('hearmeout_user_id');
+    if (!uid) {
+        uid = crypto.randomUUID ? crypto.randomUUID() :
+              'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                  const r = Math.random() * 16 | 0;
+                  return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+              });
+        localStorage.setItem('hearmeout_user_id', uid);
+    }
+    return uid;
+}
+
 // ---- Screen Management ----
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -33,7 +47,7 @@ async function generate() {
         const response = await fetch('/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ text, user_id: getUserId() })
         });
 
         if (!response.ok) throw new Error('Generation failed');
@@ -475,7 +489,11 @@ async function iterate() {
         const response = await fetch('/refine', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ feedback, session_id: 'default' })
+            body: JSON.stringify({
+                feedback,
+                session_id: currentData ? currentData.session_id : 'default',
+                user_id: getUserId()
+            })
         });
 
         if (!response.ok) throw new Error('Refinement failed');

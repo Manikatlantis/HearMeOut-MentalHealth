@@ -22,9 +22,8 @@ def _get_claude_client():
 
 
 def _parse_lyrics(lyrics_text):
-    """Parse lyrics text into verse and chorus line lists."""
-    verse_lines = []
-    chorus_lines = []
+    """Parse lyrics text into section-based line lists."""
+    sections = {}
     current_section = None
 
     for raw_line in lyrics_text.splitlines():
@@ -32,18 +31,31 @@ def _parse_lyrics(lyrics_text):
         if not line:
             continue
         lower = line.lower()
-        if lower == "[verse]":
-            current_section = "verse"
+        if lower.startswith("[") and lower.endswith("]"):
+            label = lower.strip("[]").strip()
+            # Normalize section names
+            if label in ("verse", "verse 1"):
+                current_section = "verse1"
+            elif label == "verse 2":
+                current_section = "verse2"
+            elif label == "chorus":
+                current_section = "chorus"
+            elif label == "bridge":
+                current_section = "bridge"
+            elif label == "outro":
+                current_section = "outro"
+            else:
+                current_section = label
+            if current_section not in sections:
+                sections[current_section] = []
             continue
-        elif lower == "[chorus]":
-            current_section = "chorus"
-            continue
-        if current_section == "verse":
-            verse_lines.append(line)
-        elif current_section == "chorus":
-            chorus_lines.append(line)
+        if current_section and current_section in sections:
+            sections[current_section].append(line)
 
-    return verse_lines, chorus_lines
+    # Backwards compatibility: return verse_lines, chorus_lines, and full sections dict
+    verse_lines = sections.get("verse1", [])
+    chorus_lines = sections.get("chorus", [])
+    return verse_lines, chorus_lines, sections
 
 
 def _build_composition_plan(context):
@@ -51,20 +63,27 @@ def _build_composition_plan(context):
     client = _get_claude_client()
     features = context.musical_features.to_dict()
 
-    verse_lines, chorus_lines = _parse_lyrics(context.lyrics)
+    verse_lines, chorus_lines, all_sections = _parse_lyrics(context.lyrics)
+    verse2_lines = all_sections.get("verse2", [])
+    bridge_lines = all_sections.get("bridge", [])
     has_lyrics = bool(verse_lines and chorus_lines)
 
-    # Calculate section durations
+    # Calculate section durations for full song structure:
+    # Intro → Verse 1 → Chorus → Verse 2 → Bridge → Chorus → Outro
     total_ms = features["duration"] * 1000
     if has_lyrics:
-        intro_ms = min(6000, total_ms // 5)
-        remaining = total_ms - intro_ms
-        verse_ms = remaining // 2
-        chorus_ms = remaining - verse_ms
+        intro_ms = int(total_ms * 0.08)   # ~8% intro
+        outro_ms = int(total_ms * 0.07)   # ~7% outro
+        remaining = total_ms - intro_ms - outro_ms
+        # Distribute remaining across vocal sections
+        verse1_ms = int(remaining * 0.22)
+        chorus1_ms = int(remaining * 0.20)
+        verse2_ms = int(remaining * 0.22)
+        bridge_ms = int(remaining * 0.16)
+        chorus2_ms = remaining - verse1_ms - chorus1_ms - verse2_ms - bridge_ms
     else:
         intro_ms = total_ms
-        verse_ms = 0
-        chorus_ms = 0
+        verse1_ms = verse2_ms = chorus1_ms = chorus2_ms = bridge_ms = outro_ms = 0
 
     # Get the full lyrics text for context
     lyrics_preview = context.lyrics[:200] if context.lyrics else ""
@@ -117,8 +136,10 @@ RULES:
 
     styles = json.loads(text)
 
-    # Build sections
+    # Build sections — full song structure: Intro → V1 → C → V2 → Bridge → C → Outro
     sections = []
+    is_female = "female" in str(styles.get("positive_global_styles", "")).lower()
+    vocal_start = "female lead vocals clearly begin here" if is_female else "male lead vocals clearly begin here"
 
     sections.append({
         "section_name": "Intro",
@@ -136,19 +157,15 @@ RULES:
         sections.append({
             "section_name": "Verse 1",
             "positive_local_styles": [
-                "female lead vocals clearly begin here" if "female" in str(styles.get("positive_global_styles", "")).lower()
-                    else "male lead vocals clearly begin here",
+                vocal_start,
                 "vocalist clearly sings these exact lyrics",
                 "melodic and expressive singing",
                 "clear vocal diction",
             ],
             "negative_local_styles": [
-                "instrumental only",
-                "humming",
-                "spoken word",
-                "no vocals",
+                "instrumental only", "humming", "spoken word", "no vocals",
             ],
-            "duration_ms": verse_ms,
+            "duration_ms": verse1_ms,
             "lines": verse_lines,
         })
         sections.append({
@@ -160,13 +177,63 @@ RULES:
                 "vocals front and center in the mix",
             ],
             "negative_local_styles": [
-                "instrumental only",
-                "humming",
-                "no singing",
-                "low energy",
+                "instrumental only", "humming", "no singing", "low energy",
             ],
-            "duration_ms": chorus_ms,
+            "duration_ms": chorus1_ms,
             "lines": chorus_lines,
+        })
+        sections.append({
+            "section_name": "Verse 2",
+            "positive_local_styles": [
+                "vocalist sings with deeper emotional intensity",
+                "builds on verse 1 energy",
+                "clear vocal diction",
+                "melodic variation from verse 1",
+            ],
+            "negative_local_styles": [
+                "instrumental only", "humming", "spoken word", "no vocals",
+            ],
+            "duration_ms": verse2_ms,
+            "lines": verse2_lines if verse2_lines else verse_lines,
+        })
+        sections.append({
+            "section_name": "Bridge",
+            "positive_local_styles": [
+                "emotional pivot moment",
+                "contrasting vocal delivery",
+                "stripped back or intensified arrangement",
+                "builds tension toward final chorus",
+            ],
+            "negative_local_styles": [
+                "same as verse", "monotone", "no vocals",
+            ],
+            "duration_ms": bridge_ms,
+            "lines": bridge_lines if bridge_lines else chorus_lines[:2],
+        })
+        sections.append({
+            "section_name": "Final Chorus",
+            "positive_local_styles": [
+                "powerful final chorus",
+                "full arrangement peak energy",
+                "vocalist delivers with maximum emotion",
+                "anthemic and memorable",
+            ],
+            "negative_local_styles": [
+                "instrumental only", "quiet", "fading energy",
+            ],
+            "duration_ms": chorus2_ms,
+            "lines": chorus_lines,
+        })
+        sections.append({
+            "section_name": "Outro",
+            "positive_local_styles": [
+                "gentle instrumental fade",
+                "resolution and closure",
+                "echoing the main melody",
+            ],
+            "negative_local_styles": ["abrupt ending", "new vocals", "loud"],
+            "duration_ms": outro_ms,
+            "lines": [],
         })
 
     styles["sections"] = sections

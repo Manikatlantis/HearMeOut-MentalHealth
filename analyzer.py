@@ -30,7 +30,7 @@ Return ONLY a valid JSON object with these fields:
 - chord_progression (list of chord strings, 4-8 chords)
 - energy (float 0.0-1.0, where 0 is very calm and 1 is very intense)
 - dynamics (string: "whisper", "soft", "moderate", "loud", "explosive")
-- duration (integer, 5-30 seconds. Short motifs: 5-10s, full pieces: 15-20s, ambient/atmospheric: 20-30s)
+- duration (integer, 60-120 seconds. Standard songs: 60-90s, epic/atmospheric: 90-120s)
 
 Narrative:
 {context.narrative}

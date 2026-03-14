@@ -99,6 +99,16 @@
                     <span class="btn-icon">→</span>
                 </button>
             </div>
+
+            <!-- History Panel -->
+            <div class="history-section">
+                <button class="history-toggle glass" onclick="toggleHistoryPanel()">
+                    <span class="history-icon">📋</span> Past Sessions
+                </button>
+                <div id="historyPanel" class="history-panel" style="display:none">
+                    <div id="historyList" class="history-list"></div>
+                </div>
+            </div>
         </div>
 
         <!-- LOADING SCREEN -->
@@ -200,6 +210,18 @@
                     </div>
                 </div>
 
+                <!-- Action Buttons -->
+                <div class="player-actions">
+                    <button class="action-btn glass" onclick="downloadSong()">
+                        <span class="action-icon">⬇</span>
+                        <span class="btn-text">Download</span>
+                    </button>
+                    <button class="action-btn glass" onclick="startMeditation()">
+                        <span class="action-icon">🧘</span>
+                        <span class="btn-text">Meditate</span>
+                    </button>
+                </div>
+
                 <!-- CV Controls -->
                 <div class="cv-controls">
                     <button class="cv-btn glass" id="webcamToggleBtn" onclick="toggleWebcam()">
@@ -215,6 +237,27 @@
                 <button class="new-btn glass" onclick="reset()">+ New Song</button>
             </div>
         </div>
+        <!-- MEDITATION SCREEN -->
+        <div id="meditationScreen" class="screen">
+            <div class="meditation-card glass">
+                <div class="meditation-header">
+                    <h2 class="meditation-title" id="meditationTitle">Guided Meditation</h2>
+                    <button class="meditation-close" onclick="exitMeditation()">✕</button>
+                </div>
+                <div class="meditation-body">
+                    <div class="meditation-breath-ring"></div>
+                    <p class="meditation-text" id="meditationText">Preparing your meditation...</p>
+                </div>
+                <div class="meditation-progress-bar">
+                    <div class="meditation-progress-fill" id="meditationProgress"></div>
+                </div>
+                <div class="meditation-controls">
+                    <button class="meditation-btn glass" id="meditationPauseBtn" onclick="toggleMeditationPause()">Pause</button>
+                    <button class="meditation-btn glass" onclick="exitMeditation()">End Session</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -232,5 +275,8 @@
 
     <script src="/static/background.js"></script>
     <script src="/static/app.js"></script>
+    <script src="/static/download.js"></script>
+    <script src="/static/history.js"></script>
+    <script src="/static/meditation.js"></script>
 </body>
 </html>
