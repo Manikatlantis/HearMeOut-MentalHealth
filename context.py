@@ -46,6 +46,8 @@ class PipelineContext:
         self.lyrics = ""
         self.audio_file = None
         self.pdf_file = None
+        self.word_alignment = None
+        self.composition_sections = None
         self.iteration = 0
         self.history = []
 

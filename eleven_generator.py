@@ -246,6 +246,7 @@ def generate_music_eleven(context):
 
     print("  Building ElevenLabs composition plan with lyrics...")
     composition_plan = _build_composition_plan(context)
+    context.composition_sections = composition_plan.get("sections", [])
     print(f"  Styles: {composition_plan.get('positive_global_styles', [])}")
     print(f"  Sections: {[s['section_name'] for s in composition_plan['sections']]}")
     for s in composition_plan["sections"]:

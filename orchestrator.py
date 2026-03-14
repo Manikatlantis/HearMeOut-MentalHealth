@@ -25,6 +25,7 @@ class Orchestrator:
         self.extract_features()
         self.generate_lyrics()
         self.generate_audio()
+        self.align_lyrics()
         self.generate_document()
         return self.context
 
@@ -47,6 +48,20 @@ class Orchestrator:
             generate_music_eleven(self.context)
         else:
             generate_music(self.context)
+        return self
+
+    def align_lyrics(self):
+        try:
+            from lyrics_aligner import align_lyrics
+            self.context.word_alignment = align_lyrics(
+                audio_path=self.context.audio_file,
+                lyrics_text=self.context.lyrics,
+                composition_sections=self.context.composition_sections,
+                total_duration=self.context.musical_features.duration,
+            )
+        except Exception as e:
+            print(f"  Lyrics alignment step failed (non-fatal): {e}")
+            self.context.word_alignment = None
         return self
 
     def generate_document(self):

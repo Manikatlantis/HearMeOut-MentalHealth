@@ -142,7 +142,7 @@ function displayResults(data) {
     document.getElementById('narrativeText').textContent = data.narrative;
 
     // Build lyrics timeline for overlay animation
-    buildLyricsTimeline(data.lyrics, f.duration || 30);
+    buildLyricsTimeline(data.lyrics, f.duration || 30, data.word_alignment);
 
     // Draw waveform bars
     drawWaveformBars();
@@ -271,16 +271,42 @@ function drawWaveformBars() {
 // ---- Lyrics Overlay Animation ----
 let lastActiveIdx = -1;
 
-function buildLyricsTimeline(lyricsText, totalDuration) {
+function buildLyricsTimeline(lyricsText, totalDuration, wordAlignment) {
     lyricsTimeline = [];
     lastActiveIdx = -1;
     if (!lyricsText) return;
 
+    // If server provided alignment data, use it directly
+    if (wordAlignment && wordAlignment.lines && wordAlignment.lines.length > 0) {
+        let lastSection = null;
+        wordAlignment.lines.forEach(line => {
+            // Insert section label when section changes
+            if (line.section && line.section !== lastSection) {
+                lyricsTimeline.push({
+                    type: 'label',
+                    text: line.section.toUpperCase(),
+                    time: line.start,
+                });
+                lastSection = line.section;
+            }
+            lyricsTimeline.push({
+                type: 'line',
+                text: line.text,
+                words: line.words || line.text.split(/\s+/).map(w => ({ word: w })),
+                time: line.start,
+                endTime: line.end,
+                duration: line.end - line.start,
+                hasWordTimes: !!(line.words && line.words.length > 0 && line.words[0].start != null),
+            });
+        });
+        return;
+    }
+
+    // Fallback: estimate timing client-side (original logic)
     const lines = lyricsText.split('\n').filter(l => l.trim());
     const totalLines = lines.filter(l => !l.startsWith('[')).length;
     if (totalLines === 0) return;
 
-    // Vocals start after intro (~25% in), spread across 65% of song
     const startOffset = totalDuration * 0.25;
     const availableTime = totalDuration * 0.65;
     const timePerLine = availableTime / totalLines;
@@ -298,9 +324,10 @@ function buildLyricsTimeline(lyricsText, totalDuration) {
             lyricsTimeline.push({
                 type: 'line',
                 text: trimmed,
-                words: trimmed.split(/\s+/),
+                words: trimmed.split(/\s+/).map(w => ({ word: w })),
                 time: startOffset + lineIndex * timePerLine,
                 duration: timePerLine,
+                hasWordTimes: false,
             });
             lineIndex++;
         }
@@ -336,30 +363,72 @@ function updateLyricsOverlay(currentTime, duration) {
         }
     }
 
-    // Only re-render when active index changes
-    if (activeIdx === lastActiveIdx) return;
+    // For word-level highlighting, update even if line hasn't changed
+    const activeItem = activeIdx >= 0 ? lyricsTimeline[activeIdx] : null;
+    const needsWordUpdate = activeItem && activeItem.type === 'line' && activeItem.hasWordTimes;
+
+    if (activeIdx === lastActiveIdx && !needsWordUpdate) return;
+
+    const lineChanged = activeIdx !== lastActiveIdx;
     lastActiveIdx = activeIdx;
 
     // Show all past lines + active + 1 upcoming
     const endIdx = Math.min(lyricsTimeline.length - 1, activeIdx + 1);
 
-    let html = '';
-    for (let i = 0; i <= endIdx; i++) {
-        const item = lyricsTimeline[i];
+    if (lineChanged) {
+        let html = '';
+        for (let i = 0; i <= endIdx; i++) {
+            const item = lyricsTimeline[i];
 
-        if (item.type === 'label') {
-            html += `<div class="lyrics-section-label">${item.text}</div>`;
-        } else {
-            html += `<div class="lyrics-line">${item.text}</div>`;
+            if (item.type === 'label') {
+                html += `<div class="lyrics-section-label">${item.text}</div>`;
+            } else if (item.hasWordTimes) {
+                // Render each word as a span for highlighting
+                const isActive = i === activeIdx;
+                const wordSpans = item.words.map((w, wi) => {
+                    let cls = 'lyric-word';
+                    if (isActive) {
+                        if (w.start != null && currentTime >= w.start) {
+                            cls += (w.end != null && currentTime < w.end) ? ' word-active' : ' word-past';
+                        }
+                    } else if (i < activeIdx) {
+                        cls += ' word-past';
+                    }
+                    return `<span class="${cls}" data-start="${w.start}" data-end="${w.end}">${w.word}</span>`;
+                }).join(' ');
+                html += `<div class="lyrics-line">${wordSpans}</div>`;
+            } else {
+                html += `<div class="lyrics-line">${item.text}</div>`;
+            }
         }
-    }
+        container.innerHTML = html;
 
-    container.innerHTML = html;
-
-    // Auto-scroll to the latest line
-    const allLines = container.querySelectorAll('.lyrics-line');
-    if (allLines.length) {
-        allLines[allLines.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Auto-scroll to the latest line
+        const allLines = container.querySelectorAll('.lyrics-line');
+        if (allLines.length) {
+            allLines[allLines.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else if (needsWordUpdate) {
+        // Just update word classes on the active line without full re-render
+        const allLines = container.querySelectorAll('.lyrics-line');
+        if (allLines.length) {
+            const activeLine = allLines[allLines.length - (endIdx > activeIdx ? 2 : 1)];
+            if (activeLine) {
+                const spans = activeLine.querySelectorAll('.lyric-word');
+                spans.forEach(span => {
+                    const start = parseFloat(span.dataset.start);
+                    const end = parseFloat(span.dataset.end);
+                    span.classList.remove('word-active', 'word-past');
+                    if (!isNaN(start) && currentTime >= start) {
+                        if (!isNaN(end) && currentTime < end) {
+                            span.classList.add('word-active');
+                        } else {
+                            span.classList.add('word-past');
+                        }
+                    }
+                });
+            }
+        }
     }
 }
 

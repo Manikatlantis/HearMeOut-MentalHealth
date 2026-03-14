@@ -102,6 +102,7 @@ def process(request: ProcessRequest):
         "audio_file": context.audio_file,
         "audio_url": audio_url,
         "pdf_file": context.pdf_file,
+        "word_alignment": context.word_alignment,
     }
 
 
@@ -141,6 +142,7 @@ def refine(request: FeedbackRequest):
         "audio_file": context.audio_file,
         "audio_url": audio_url,
         "pdf_file": context.pdf_file,
+        "word_alignment": context.word_alignment,
     }
 
 

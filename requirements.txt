@@ -5,3 +5,4 @@ anthropic
 elevenlabs
 google-generativeai
 reportlab
+faster-whisper

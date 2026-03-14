@@ -638,6 +638,20 @@ audio { display: none; }
     transform: translateY(0);
 }
 
+/* ---- Word-level Highlighting ---- */
+.lyric-word {
+    transition: color 0.15s, text-shadow 0.15s;
+}
+
+.word-active {
+    color: #f472b6;
+    text-shadow: 0 0 8px rgba(244, 114, 182, 0.5);
+}
+
+.word-past {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 /* ============================================
    ITERATE PANEL
    ============================================ */
