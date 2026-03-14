@@ -81,6 +81,40 @@
         </div>
     </div>
 
+    <!-- CRISIS SAFETY NET MODAL -->
+    <div id="crisisModal" class="crisis-modal">
+        <div class="crisis-content glass">
+            <h2 class="crisis-title">You're Not Alone</h2>
+            <p class="crisis-subtitle">We noticed your words may reflect deep pain. Please know that help is available right now.</p>
+            <div class="crisis-resources">
+                <a href="tel:988" class="crisis-resource">
+                    <span class="crisis-resource-icon">&#128222;</span>
+                    <div>
+                        <strong>988 Suicide &amp; Crisis Lifeline</strong>
+                        <p>Call or text 988 — free, 24/7</p>
+                    </div>
+                </a>
+                <a href="sms:741741&body=HELLO" class="crisis-resource">
+                    <span class="crisis-resource-icon">&#128172;</span>
+                    <div>
+                        <strong>Crisis Text Line</strong>
+                        <p>Text HELLO to 741741</p>
+                    </div>
+                </a>
+                <a href="https://www.iasp.info/resources/Crisis_Centres/" target="_blank" rel="noopener" class="crisis-resource">
+                    <span class="crisis-resource-icon">&#127758;</span>
+                    <div>
+                        <strong>International Resources</strong>
+                        <p>Find help in your country</p>
+                    </div>
+                </a>
+            </div>
+            <button class="crisis-dismiss" onclick="crisis.dismissModal()">
+                <span class="btn-text">I understand, continue</span>
+            </button>
+        </div>
+    </div>
+
     <!-- ETHICS DISCLAIMER MODAL -->
     <div id="ethicsModal" class="ethics-modal">
         <div class="ethics-content glass">
@@ -171,7 +205,7 @@
             </div>
         </div>
 
-        <!-- QUESTIONNAIRE RESULT -->
+        <!-- QUESTIONNAIRE RESULT / SESSION RECAP -->
         <div id="questionnaireResultScreen" class="screen">
             <div id="questionnaireResult" class="q-result"></div>
         </div>
@@ -196,11 +230,16 @@
                 </button>
             </div>
 
-            <!-- History Panel -->
+            <!-- History & Dashboard -->
             <div class="history-section">
-                <button class="history-toggle glass" onclick="toggleHistoryPanel()">
-                    <span class="history-icon">📋</span> Past Sessions
-                </button>
+                <div class="history-buttons-row">
+                    <button class="history-toggle glass" onclick="toggleHistoryPanel()">
+                        <span class="history-icon">&#128203;</span> Past Sessions
+                    </button>
+                    <button class="journey-toggle glass" onclick="dashboard.show()">
+                        <span class="history-icon">&#128200;</span> My Journey
+                    </button>
+                </div>
                 <div id="historyPanel" class="history-panel" style="display:none">
                     <div id="historyList" class="history-list"></div>
                 </div>
@@ -354,6 +393,17 @@
             </div>
         </div>
 
+        <!-- WELLNESS DASHBOARD -->
+        <div id="dashboardScreen" class="screen">
+            <div class="dashboard-card glass">
+                <div class="dashboard-header">
+                    <h2 class="dashboard-title">My Journey</h2>
+                    <button class="dashboard-close" onclick="showScreen('inputScreen')">&#10005;</button>
+                </div>
+                <div id="dashboardContent" class="dashboard-body"></div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -370,6 +420,7 @@
     <script src="/static/cv-ui.js"></script>
 
     <script src="/static/background.js"></script>
+    <script src="/static/crisis.js"></script>
     <script src="/static/ethics.js"></script>
     <script src="/static/questionnaire.js"></script>
     <script src="/static/chatbot.js"></script>
@@ -377,5 +428,6 @@
     <script src="/static/download.js"></script>
     <script src="/static/history.js"></script>
     <script src="/static/meditation.js"></script>
+    <script src="/static/dashboard.js"></script>
 </body>
 </html>

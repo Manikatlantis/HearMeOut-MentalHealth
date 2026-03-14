@@ -76,6 +76,12 @@ const chatbot = {
         const message = input.value.trim();
         if (!message) return;
 
+        // Crisis safety check
+        if (typeof crisis !== 'undefined') {
+            const check = crisis.checkForCrisis(message);
+            if (check.detected) crisis.showModal();
+        }
+
         // Add user message to UI immediately
         this.history.push({ role: 'user', content: message });
         this.renderMessages();

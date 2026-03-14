@@ -46,6 +46,12 @@ async function generate() {
     const text = document.getElementById('storyInput').value.trim();
     if (!text) return;
 
+    // Crisis safety check
+    if (typeof crisis !== 'undefined') {
+        const check = crisis.checkForCrisis(text);
+        if (check.detected) crisis.showModal();
+    }
+
     const btn = document.getElementById('generateBtn');
     btn.disabled = true;
 
@@ -184,6 +190,11 @@ function togglePlay() {
         art.classList.remove('spinning');
         if (document.getElementById('miniPlayIcon'))
             document.getElementById('miniPlayIcon').textContent = '▶';
+
+        // Save emotion data on pause if significant data collected
+        if (typeof emotionTracker !== 'undefined' && emotionTracker.timeline.length > 5) {
+            saveEmotionData();
+        }
     }
 }
 
@@ -238,6 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof showEmotionRefinementPrompt === 'function') showEmotionRefinementPrompt(analysis);
             }
         }
+
+        // Persist emotion data to backend
+        saveEmotionData();
 
         // Show post-session questionnaire
         if (typeof questionnaire !== 'undefined' && !questionnaire.postAnswers) {
@@ -432,6 +446,21 @@ function updateLyricsOverlay(currentTime, duration) {
     }
 }
 
+// ---- Save Emotion Data Helper ----
+function saveEmotionData() {
+    if (typeof emotionTracker !== 'undefined' && emotionTracker.timeline.length > 0 && currentSessionId) {
+        fetch('/api/emotion-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: currentSessionId,
+                user_id: getUserId(),
+                emotion_timeline: emotionTracker.timeline
+            })
+        }).catch(e => console.warn('Failed to save emotion data:', e));
+    }
+}
+
 // ---- Reset ----
 function reset() {
     const player = document.getElementById('audioPlayer');
@@ -444,6 +473,9 @@ function reset() {
     hideLyricsOverlay();
     document.getElementById('waveformProgress').style.width = '0%';
     document.getElementById('timeDisplay').textContent = '0:00';
+
+    // Persist any collected emotion data before resetting
+    saveEmotionData();
 
     // Reset CV features
     if (typeof resetEmotionTracker === 'function') resetEmotionTracker();
