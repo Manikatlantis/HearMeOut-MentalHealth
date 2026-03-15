@@ -7,6 +7,7 @@ let mouseX = 0, mouseY = 0;
 let audioCtx, sourceConnected = false;
 let clock;
 let musicalNotes = [];
+let fireballs = [];
 let lyricsActive = false;
 let noteSpawnTimer = 0;
 
@@ -342,6 +343,106 @@ function getBassEnergy() {
     return sum / bassRange / 255;
 }
 
+// ---- 3D Fireball (DBZ energy ball release) ----
+
+function createFireballGeometry() {
+    const group = new THREE.Group();
+
+    // Core (bright orange-white)
+    const coreGeom = new THREE.SphereGeometry(12, 16, 12);
+    const coreMat = new THREE.MeshBasicMaterial({
+        color: 0xffcc44,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    group.add(new THREE.Mesh(coreGeom, coreMat));
+
+    // Inner glow (amber)
+    const innerGeom = new THREE.SphereGeometry(20, 14, 10);
+    const innerMat = new THREE.MeshBasicMaterial({
+        color: 0xff8800,
+        transparent: true,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    group.add(new THREE.Mesh(innerGeom, innerMat));
+
+    // Outer glow (red)
+    const outerGeom = new THREE.SphereGeometry(30, 12, 8);
+    const outerMat = new THREE.MeshBasicMaterial({
+        color: 0xff3300,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    group.add(new THREE.Mesh(outerGeom, outerMat));
+
+    return group;
+}
+
+function spawnFireball(normalizedPos) {
+    if (!normalizedPos || !scene) return;
+    const fb = createFireballGeometry();
+
+    // Map 2D normalized hand position to 3D scene coordinates
+    const x = (normalizedPos.x - 0.5) * 800;
+    const y = -(normalizedPos.y - 0.5) * 600;
+    const z = -200;
+    fb.position.set(x, y, z);
+
+    // Shoot toward camera (positive Z)
+    fb.userData = {
+        velocity: new THREE.Vector3(
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2,
+            12 + Math.random() * 6
+        ),
+        life: 0,
+        maxLife: 120,
+    };
+
+    scene.add(fb);
+    fireballs.push(fb);
+}
+
+function updateFireballs(time) {
+    for (let i = fireballs.length - 1; i >= 0; i--) {
+        const fb = fireballs[i];
+        const ud = fb.userData;
+        ud.life++;
+
+        // Move
+        fb.position.add(ud.velocity);
+
+        // Slight wobble
+        fb.position.x += Math.sin(time * 5 + i) * 0.5;
+        fb.position.y += Math.cos(time * 4 + i) * 0.3;
+
+        // Scale pulse
+        const pulse = 1 + Math.sin(time * 10) * 0.1;
+        fb.scale.setScalar(pulse);
+
+        // Fade out in last 30% of life
+        const fadeStart = ud.maxLife * 0.7;
+        if (ud.life > fadeStart) {
+            const fade = 1 - (ud.life - fadeStart) / (ud.maxLife - fadeStart);
+            fb.traverse(child => {
+                if (child.material) child.material.opacity = child.material.opacity * fade;
+            });
+        }
+
+        // Remove dead fireballs
+        if (ud.life > ud.maxLife || fb.position.z > 1200) {
+            scene.remove(fb);
+            fireballs.splice(i, 1);
+        }
+    }
+}
+
 function animate() {
     requestAnimationFrame(animate);
     const time = clock.getElapsedTime();
@@ -476,6 +577,15 @@ function animate() {
     }
 
     updateMusicalNotes(time, energy);
+
+    // DBZ fireball system
+    if (typeof consumeFireballRelease === 'function') {
+        const releasePos = consumeFireballRelease();
+        if (releasePos) {
+            spawnFireball(releasePos);
+        }
+    }
+    updateFireballs(time);
 
     renderer.render(scene, camera);
 }

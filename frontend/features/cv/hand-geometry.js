@@ -35,17 +35,20 @@ const handGeometry = {
 
     // Gesture -> color mapping
     GESTURE_COLORS: {
-        pinch:         '#2dd4bf',
-        fist:          '#f472b6',
-        wave:          '#fbbf24',
-        circular:      '#a78bfa',
-        open_palm:     '#34d399',
         volume_up:     '#f97316',
         volume_down:   '#6366f1',
-        stereo_spread: '#ec4899',
-        finger_spread: '#22d3ee'
+        bass_boost:    '#f472b6',
+        vocal_isolate: '#2dd4bf',
+        heart:         '#fb7185',
+        dbz_charge:    '#fbbf24'
     },
     DEFAULT_COLOR: '#e2e8f0',
+
+    // Heart particles (visual-only gesture)
+    heartParticles: [],
+
+    // Energy ball state cache
+    _energyBallState: null,
 
     init(canvas) {
         this.canvas = canvas;
@@ -74,6 +77,8 @@ const handGeometry = {
         this.ctx = null;
         this.prevLandmarks = [];
         this.particles = [];
+        this.heartParticles = [];
+        this._energyBallState = null;
     },
 
     // Store latest data for shared render loop
@@ -96,6 +101,8 @@ const handGeometry = {
         if (!multiHandLandmarks || multiHandLandmarks.length === 0) {
             this._updateParticles(null);
             this._drawParticles(ctx);
+            this._updateHeartParticles(ctx, w, h);
+            this._drawEnergyBall(ctx, canvas, null);
             this.prevLandmarks = [];
             return;
         }
@@ -118,6 +125,17 @@ const handGeometry = {
         }
 
         this._drawParticles(ctx);
+
+        // Heart particles (spawn if heart gesture active)
+        if (activeGestures && activeGestures.has('heart') && typeof gestureMixer !== 'undefined' && gestureMixer._heartMidpoint) {
+            const mp = gestureMixer._heartMidpoint;
+            this._spawnHeartParticles(mp.x * w, mp.y * h);
+        }
+        this._updateHeartParticles(ctx, w, h);
+
+        // Energy ball
+        const ebState = (typeof getEnergyBallState === 'function') ? getEnergyBallState() : null;
+        this._drawEnergyBall(ctx, canvas, ebState);
     },
 
     draw(multiHandLandmarks, activeGestures) {
@@ -302,6 +320,114 @@ const handGeometry = {
             ctx.arc(p.x, p.y, 1.5 * p.life, 0, Math.PI * 2);
             ctx.fill();
         }
+        ctx.restore();
+    },
+
+    // --- Heart Particles ---
+
+    _spawnHeartParticles(cx, cy) {
+        const count = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < count; i++) {
+            this.heartParticles.push({
+                x: cx + (Math.random() - 0.5) * 30,
+                y: cy,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -(1 + Math.random() * 2.5),
+                size: 8 + Math.random() * 14,
+                life: 1.0,
+                hue: Math.random() > 0.5 ? '#fb7185' : '#f472b6'
+            });
+        }
+        if (this.heartParticles.length > 60) {
+            this.heartParticles.splice(0, this.heartParticles.length - 60);
+        }
+    },
+
+    _updateHeartParticles(ctx, w, h) {
+        for (let i = this.heartParticles.length - 1; i >= 0; i--) {
+            const p = this.heartParticles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy -= 0.02; // float up faster over time
+            p.life -= 0.015;
+            if (p.life <= 0 || p.y < -20) {
+                this.heartParticles.splice(i, 1);
+                continue;
+            }
+            this._drawHeart(ctx, p.x, p.y, p.size * p.life, p.hue, p.life * 0.8);
+        }
+    },
+
+    _drawHeart(ctx, x, y, size, color, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        const s = size / 2;
+        ctx.moveTo(x, y + s * 0.3);
+        ctx.bezierCurveTo(x, y - s * 0.5, x - s, y - s * 0.5, x - s, y + s * 0.1);
+        ctx.bezierCurveTo(x - s, y + s * 0.6, x, y + s, x, y + s * 1.2);
+        ctx.bezierCurveTo(x, y + s, x + s, y + s * 0.6, x + s, y + s * 0.1);
+        ctx.bezierCurveTo(x + s, y - s * 0.5, x, y - s * 0.5, x, y + s * 0.3);
+        ctx.fill();
+        ctx.restore();
+    },
+
+    // --- DBZ Energy Ball ---
+
+    _drawEnergyBall(ctx, canvas, state) {
+        if (!state || !state.midpoint) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = state.midpoint.x * w;
+        const cy = state.midpoint.y * h;
+        const charge = state.charge;
+
+        const baseRadius = 15 + charge * 40;
+        const flicker = Math.sin(Date.now() * 0.02) * 3 * charge;
+        const radius = baseRadius + flicker;
+
+        ctx.save();
+
+        // Outer glow
+        const outerGrad = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius * 2);
+        outerGrad.addColorStop(0, `rgba(255, 180, 50, ${charge * 0.4})`);
+        outerGrad.addColorStop(0.5, `rgba(255, 100, 20, ${charge * 0.2})`);
+        outerGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        ctx.fillStyle = outerGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner core
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        coreGrad.addColorStop(0, `rgba(255, 255, 200, ${0.6 + charge * 0.4})`);
+        coreGrad.addColorStop(0.4, `rgba(255, 200, 50, ${0.5 + charge * 0.3})`);
+        coreGrad.addColorStop(1, `rgba(255, 120, 20, ${charge * 0.5})`);
+        ctx.fillStyle = coreGrad;
+        ctx.shadowColor = '#ffaa00';
+        ctx.shadowBlur = 20 + charge * 30;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sparkle ring
+        ctx.shadowBlur = 0;
+        const sparkleCount = Math.floor(charge * 12);
+        for (let i = 0; i < sparkleCount; i++) {
+            const angle = (Date.now() * 0.003 + i * (Math.PI * 2 / sparkleCount));
+            const dist = radius * (1.2 + Math.sin(Date.now() * 0.01 + i) * 0.4);
+            const sx = cx + Math.cos(angle) * dist;
+            const sy = cy + Math.sin(angle) * dist;
+            ctx.globalAlpha = charge * 0.7;
+            ctx.fillStyle = '#ffffcc';
+            ctx.beginPath();
+            ctx.arc(sx, sy, 1.5 + charge * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         ctx.restore();
     }
 };

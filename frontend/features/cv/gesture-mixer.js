@@ -1,6 +1,6 @@
 // ============================================
 // Gesture Mixer — MediaPipe Hands integration
-// Detects hand gestures, maps to audio effects
+// 6 gestures: volume up/down, bass boost, vocal isolate, heart, DBZ energy ball
 // ============================================
 
 let gestureMixer = {
@@ -8,10 +8,14 @@ let gestureMixer = {
     hands: null,
     camera: null,
     lastResults: null,
-    handPositions: [], // normalized [0,1] positions for Three.js
+    handPositions: [],
     activeGestures: new Set(),
-    prevLandmarks: [],  // for motion tracking
-    motionHistory: []   // for wave/circular detection
+    // DBZ energy ball state
+    _energyCharge: 0,
+    _energyMidpoint: null,
+    _energyBallReleased: false,
+    _energyReleasePos: null,
+    _prevWristDist: 0
 };
 
 function initGestureMixer(videoElement) {
@@ -41,6 +45,13 @@ function initGestureMixer(videoElement) {
         } else {
             gestureMixer.handPositions = [];
             gestureMixer.activeGestures.clear();
+            // If hands disappear while charging, release if enough charge
+            if (gestureMixer._energyCharge > 0.3) {
+                gestureMixer._energyBallReleased = true;
+                gestureMixer._energyReleasePos = gestureMixer._energyMidpoint;
+            }
+            gestureMixer._energyCharge = 0;
+            gestureMixer._energyMidpoint = null;
             if (typeof handGeometry !== 'undefined') {
                 handGeometry.updateData([], new Set());
             }
@@ -80,6 +91,17 @@ function stopGestureMixer() {
     }
     gestureMixer.handPositions = [];
     gestureMixer.activeGestures.clear();
+    gestureMixer._energyCharge = 0;
+    gestureMixer._energyMidpoint = null;
+    gestureMixer._energyBallReleased = false;
+}
+
+// --- Utility ---
+
+function distance2D(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
 // --- Gesture Detection ---
@@ -95,98 +117,42 @@ function processGestures(results) {
         const lm = hands[h];
         const wrist = lm[0];
 
-        // Store normalized hand position for Three.js
         gestureMixer.handPositions.push({
             x: wrist.x,
             y: wrist.y,
             z: wrist.z || 0
         });
 
-        // Detect gestures
+        // Single-hand gestures
         detectVolumeGesture(lm);
-        detectPinchGesture(lm);
-        detectFingerSpread(lm);
-        if (!gestureMixer.activeGestures.has('finger_spread')) {
-            detectOpenPalmGesture(lm);
-        }
         detectFistGesture(lm);
+        detectPeaceSign(lm);
     }
 
     // Two-hand gestures
     if (hands.length >= 2) {
-        detectStereoSpread(hands[0], hands[1]);
+        detectHeartGesture(hands[0], hands[1]);
+        detectDBZCharge(hands[0], hands[1]);
+    } else {
+        // Single hand — if was charging, check release
+        if (gestureMixer._energyCharge > 0.3) {
+            gestureMixer._energyBallReleased = true;
+            gestureMixer._energyReleasePos = gestureMixer._energyMidpoint;
+        }
+        gestureMixer._energyCharge = 0;
+        gestureMixer._energyMidpoint = null;
     }
 
-    // Motion-based gestures (wave + circular)
-    detectMotionGestures(hands[0]);
-
-    // Apply detected gestures to effects
+    // Apply detected gestures to audio effects
     applyGesturesToEffects();
 }
 
 function detectVolumeGesture(lm) {
     const wristY = lm[0].y;
-    // Hand raised high → volume up; lowered → volume down
     if (wristY < 0.3) {
         gestureMixer.activeGestures.add('volume_up');
     } else if (wristY > 0.7) {
         gestureMixer.activeGestures.add('volume_down');
-    }
-}
-
-function detectPinchGesture(lm) {
-    // Thumb tip (4) to index tip (8) distance
-    const dx = lm[4].x - lm[8].x;
-    const dy = lm[4].y - lm[8].y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 0.06) {
-        gestureMixer.activeGestures.add('pinch');
-        // Store pinch tightness for filter sweep
-        gestureMixer._pinchDist = dist;
-    }
-}
-
-function detectOpenPalmGesture(lm) {
-    // All fingertips far from palm center (landmark 9 = middle finger base)
-    const palm = lm[9];
-    const tips = [lm[4], lm[8], lm[12], lm[16], lm[20]];
-    let totalDist = 0;
-    for (const tip of tips) {
-        const dx = tip.x - palm.x;
-        const dy = tip.y - palm.y;
-        totalDist += Math.sqrt(dx * dx + dy * dy);
-    }
-    const avgDist = totalDist / 5;
-    if (avgDist > 0.15) {
-        gestureMixer.activeGestures.add('open_palm');
-    }
-}
-
-function detectFingerSpread(lm) {
-    // Check hand is open first (tips far from palm)
-    const palm = lm[9];
-    const tips = [lm[4], lm[8], lm[12], lm[16], lm[20]];
-    let totalDist = 0;
-    for (const tip of tips) {
-        const dx = tip.x - palm.x;
-        const dy = tip.y - palm.y;
-        totalDist += Math.sqrt(dx * dx + dy * dy);
-    }
-    const avgDist = totalDist / 5;
-    if (avgDist <= 0.15) return;
-
-    // Check inter-fingertip spread: adjacent tips [4↔8, 8↔12, 12↔16, 16↔20]
-    const pairs = [[4,8],[8,12],[12,16],[16,20]];
-    let spreadTotal = 0;
-    for (const [a, b] of pairs) {
-        const dx = lm[a].x - lm[b].x;
-        const dy = lm[a].y - lm[b].y;
-        spreadTotal += Math.sqrt(dx * dx + dy * dy);
-    }
-    const avgSpread = spreadTotal / 4;
-    if (avgSpread > 0.09) {
-        gestureMixer.activeGestures.add('finger_spread');
-        gestureMixer._spreadIntensity = Math.min(1, (avgSpread - 0.09) / 0.06);
     }
 }
 
@@ -196,118 +162,114 @@ function detectFistGesture(lm) {
     const tips = [lm[8], lm[12], lm[16], lm[20]];
     let totalDist = 0;
     for (const tip of tips) {
-        const dx = tip.x - palm.x;
-        const dy = tip.y - palm.y;
-        totalDist += Math.sqrt(dx * dx + dy * dy);
+        totalDist += distance2D(tip, palm);
     }
     const avgDist = totalDist / 4;
     if (avgDist < 0.08) {
-        gestureMixer.activeGestures.add('fist');
+        gestureMixer.activeGestures.add('bass_boost');
         gestureMixer._fistTightness = Math.min(1, 1 - (avgDist / 0.08));
     }
 }
 
-function detectStereoSpread(hand1, hand2) {
-    const dist = Math.abs(hand1[0].x - hand2[0].x);
-    if (dist > 0.3) {
-        gestureMixer.activeGestures.add('stereo_spread');
-        gestureMixer._stereoDist = dist;
-        gestureMixer._stereoMidpoint = (hand1[0].x + hand2[0].x) / 2;
+function detectPeaceSign(lm) {
+    // Index up: tip[8].y < pip[6].y
+    // Middle up: tip[12].y < pip[10].y
+    // Ring down: tip[16].y > pip[14].y
+    // Pinky down: tip[20].y > pip[18].y
+    const indexUp = lm[8].y < lm[6].y;
+    const middleUp = lm[12].y < lm[10].y;
+    const ringDown = lm[16].y > lm[14].y;
+    const pinkyDown = lm[20].y > lm[18].y;
+
+    if (indexUp && middleUp && ringDown && pinkyDown) {
+        gestureMixer.activeGestures.add('vocal_isolate');
     }
 }
 
-function detectMotionGestures(lm) {
-    const current = { x: lm[9].x, y: lm[9].y, t: Date.now() };
-    gestureMixer.motionHistory.push(current);
+function detectHeartGesture(hand1, hand2) {
+    // Both thumb tips close
+    const thumbDist = distance2D(hand1[4], hand2[4]);
+    // Both index tips close
+    const indexDist = distance2D(hand1[8], hand2[8]);
+    // Thumbs below index (thumbs Y > index Y in screen coords)
+    const thumbsBelow = hand1[4].y > hand1[8].y && hand2[4].y > hand2[8].y;
 
-    // Keep last 15 frames (~0.5s at 30fps)
-    if (gestureMixer.motionHistory.length > 15) {
-        gestureMixer.motionHistory.shift();
+    if (thumbDist < 0.06 && indexDist < 0.06 && thumbsBelow) {
+        gestureMixer.activeGestures.add('heart');
+        gestureMixer._heartMidpoint = {
+            x: (hand1[4].x + hand2[4].x + hand1[8].x + hand2[8].x) / 4,
+            y: (hand1[4].y + hand2[4].y + hand1[8].y + hand2[8].y) / 4
+        };
+    }
+}
+
+function detectDBZCharge(hand1, hand2) {
+    const wristDist = distance2D(hand1[0], hand2[0]);
+
+    // Check both hands are slightly open (not fist, not fully spread)
+    function handOpenness(lm) {
+        const palm = lm[9];
+        const tips = [lm[8], lm[12], lm[16], lm[20]];
+        let total = 0;
+        for (const tip of tips) total += distance2D(tip, palm);
+        return total / 4;
     }
 
-    const history = gestureMixer.motionHistory;
-    if (history.length < 8) return;
+    const open1 = handOpenness(hand1);
+    const open2 = handOpenness(hand2);
+    const bothSlightlyOpen = open1 > 0.08 && open1 < 0.18 && open2 > 0.08 && open2 < 0.18;
 
-    // Wave detection: significant lateral movement
-    const xValues = history.map(p => p.x);
-    const xRange = Math.max(...xValues) - Math.min(...xValues);
-    if (xRange > 0.2) {
-        gestureMixer.activeGestures.add('wave');
-        gestureMixer._waveIntensity = Math.min(1, xRange / 0.4);
+    // Charging: wrists 0.1-0.35 apart, both hands slightly open
+    if (wristDist >= 0.1 && wristDist <= 0.35 && bothSlightlyOpen) {
+        gestureMixer._energyCharge = Math.min(1, gestureMixer._energyCharge + 0.02);
+        gestureMixer._energyMidpoint = {
+            x: (hand1[0].x + hand2[0].x) / 2,
+            y: (hand1[0].y + hand2[0].y) / 2
+        };
+        gestureMixer.activeGestures.add('dbz_charge');
+        gestureMixer._prevWristDist = wristDist;
     }
-
-    // Circular motion detection: check if points form an arc
-    if (history.length >= 12) {
-        const cx = history.reduce((s, p) => s + p.x, 0) / history.length;
-        const cy = history.reduce((s, p) => s + p.y, 0) / history.length;
-        const radii = history.map(p => Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2));
-        const avgR = radii.reduce((s, r) => s + r, 0) / radii.length;
-        const variance = radii.reduce((s, r) => s + (r - avgR) ** 2, 0) / radii.length;
-        // Low variance + decent radius = circular motion
-        if (variance < 0.002 && avgR > 0.05) {
-            gestureMixer.activeGestures.add('circular');
-            gestureMixer._circularIntensity = Math.min(1, avgR / 0.15);
+    // Release: charge > 0.3 and hands separate
+    else if (gestureMixer._energyCharge > 0.3 && wristDist > 0.4) {
+        gestureMixer._energyBallReleased = true;
+        gestureMixer._energyReleasePos = gestureMixer._energyMidpoint;
+        gestureMixer._energyCharge = 0;
+        gestureMixer._energyMidpoint = null;
+    }
+    // Not in range — decay charge slowly
+    else if (gestureMixer._energyCharge > 0) {
+        gestureMixer._energyCharge = Math.max(0, gestureMixer._energyCharge - 0.01);
+        if (gestureMixer._energyCharge > 0.05) {
+            gestureMixer.activeGestures.add('dbz_charge');
         }
     }
 }
 
-// --- Map Gestures to Effects ---
+// --- Map Gestures to Audio Effects ---
 
 function applyGesturesToEffects() {
     if (typeof effectChain === 'undefined' || !effectChain) return;
 
     const g = gestureMixer.activeGestures;
 
-    // Open palm reset — only if no finger_spread active
-    if (g.has('open_palm') && !g.has('pinch') && !g.has('fist') && !g.has('finger_spread')) {
+    // If no audio gestures active, reset
+    const hasAudio = g.has('volume_up') || g.has('volume_down') || g.has('bass_boost') || g.has('vocal_isolate');
+    if (!hasAudio) {
         resetAllEffects();
         return;
     }
 
-    // Volume (unchanged)
+    // Volume
     if (g.has('volume_up')) setVolume(1.5);
     else if (g.has('volume_down')) setVolume(0.3);
 
-    // Pinch → filter sweep (unchanged)
-    if (g.has('pinch')) {
-        const freq = 200 + ((gestureMixer._pinchDist || 0.05) / 0.06) * 19800;
-        setFilterFrequency(Math.min(20000, freq));
+    // Bass boost (fist) — takes priority over vocal isolate
+    if (g.has('bass_boost')) {
+        setBassBoost(gestureMixer._fistTightness || 0.7);
     }
-
-    // Fist → reverb (was distortion)
-    if (g.has('fist')) {
-        setReverbMix((gestureMixer._fistTightness || 0.5) * 0.85);
-    }
-
-    // Finger spread → distortion + bright filter (new gesture)
-    if (g.has('finger_spread')) {
-        const intensity = gestureMixer._spreadIntensity || 0.5;
-        setDistortion(intensity * 35);
-        setFilterFrequency(2000 + intensity * 8000);
-    }
-
-    // Stereo spread → pan + reverb (enhanced — was pan only)
-    if (g.has('stereo_spread')) {
-        const dist = gestureMixer._stereoDist || 0.3;
-        const normalized = Math.min(1, (dist - 0.3) / 0.5);
-        const midpoint = gestureMixer._stereoMidpoint || 0.5;
-        setStereoPan((0.5 - midpoint) * 2 * normalized * 0.8);
-        setReverbMix(normalized * 0.6);
-    }
-
-    // Wave → distortion + auto-pan "shatter" (was reverb)
-    if (g.has('wave')) {
-        const intensity = gestureMixer._waveIntensity || 0.5;
-        setDistortion(intensity * 70);
-        setStereoPan(Math.sin(Date.now() * 0.01) * intensity * 0.9);
-    }
-
-    // Circular → delay + filter + pitch wobble "vortex" (was simple delay)
-    if (g.has('circular')) {
-        const intensity = gestureMixer._circularIntensity || 0.5;
-        const wobble = Math.sin(Date.now() * 0.008 * intensity) * 0.005 * intensity;
-        setDelayParams(0.2 * intensity + wobble, 0.3 + intensity * 0.4);
-        setFilterFrequency(20000 - intensity * 15000);
+    // Vocal isolate (peace sign)
+    else if (g.has('vocal_isolate')) {
+        setVocalIsolate(true);
     }
 }
 
@@ -319,4 +281,20 @@ function getHandPositions() {
 
 function getActiveGestures() {
     return gestureMixer.activeGestures;
+}
+
+function getEnergyBallState() {
+    if (gestureMixer._energyCharge <= 0) return null;
+    return {
+        charge: gestureMixer._energyCharge,
+        midpoint: gestureMixer._energyMidpoint
+    };
+}
+
+function consumeFireballRelease() {
+    if (!gestureMixer._energyBallReleased) return null;
+    const pos = gestureMixer._energyReleasePos;
+    gestureMixer._energyBallReleased = false;
+    gestureMixer._energyReleasePos = null;
+    return pos;
 }

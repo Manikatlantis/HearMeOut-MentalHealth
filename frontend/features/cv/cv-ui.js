@@ -199,9 +199,17 @@ function updateEffectIndicators() {
     const values = getEffectValues();
     if (!values) return;
 
+    // Determine mode from filter type
+    let mode = 'Normal';
+    if (values.filterType === 'highpass' && values.filterFreq < 1000) {
+        mode = 'Vocal';
+    } else if (values.filterType === 'lowpass' && values.filterFreq < 5000) {
+        mode = 'Bass';
+    }
+
     const indicators = {
-        'fx-volume': { label: 'Vol', val: values.volume, active: Math.abs(values.volume - 1.0) > 0.05 },
-        'fx-filter': { label: 'Filter', val: Math.round(values.filterFreq) + 'Hz', active: values.filterFreq < 19000 },
+        'fx-volume': { label: 'Vol', val: values.volume.toFixed(1), active: Math.abs(values.volume - 1.0) > 0.05 },
+        'fx-filter': { label: 'Mode', val: mode, active: mode !== 'Normal' },
         'fx-distortion': { label: 'Dist', val: Math.round(values.distortionAmount), active: values.distortionAmount > 1 },
         'fx-delay': { label: 'Delay', val: values.delayTime.toFixed(2) + 's', active: values.delayTime > 0.01 },
         'fx-reverb': { label: 'Reverb', val: Math.round(values.reverbWet * 100) + '%', active: values.reverbWet > 0.01 },
@@ -211,6 +219,8 @@ function updateEffectIndicators() {
     for (const [id, info] of Object.entries(indicators)) {
         const el = document.getElementById(id);
         if (!el) continue;
+        const labelSpan = el.querySelector('.fx-label');
+        if (labelSpan) labelSpan.textContent = info.label;
         const valSpan = el.querySelector('.fx-val');
         if (valSpan) valSpan.textContent = info.val;
         if (info.active) {

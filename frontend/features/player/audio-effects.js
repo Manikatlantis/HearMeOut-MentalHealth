@@ -96,6 +96,7 @@ function initEffectChain(source, analyserNode, audioCtx) {
         values: {
             volume: 1.0,
             filterFreq: 20000,
+            filterType: 'lowpass',
             distortionAmount: 0,
             delayTime: 0,
             delayFeedback: 0,
@@ -160,9 +161,41 @@ function setStereoPan(pan) {
     effectChain.values.pan = pan;
 }
 
+function setBassBoost(intensity) {
+    if (!effectChain) return;
+    intensity = clampEffect(intensity, 0, 1);
+    const ctx = effectChain.audioCtx;
+    effectChain.filter.type = 'lowpass';
+    const freq = 800 - intensity * 400; // 800Hz down to 400Hz
+    effectChain.filter.frequency.setTargetAtTime(freq, ctx.currentTime, 0.05);
+    effectChain.filter.Q.setTargetAtTime(1 + intensity * 2, ctx.currentTime, 0.05);
+    effectChain.values.filterFreq = freq;
+    effectChain.values.filterType = 'lowpass';
+    setReverbMix(0.3 * intensity);
+    setDistortion(15 * intensity);
+}
+
+function setVocalIsolate(active) {
+    if (!effectChain) return;
+    const ctx = effectChain.audioCtx;
+    if (active) {
+        effectChain.filter.type = 'highpass';
+        effectChain.filter.frequency.setTargetAtTime(300, ctx.currentTime, 0.05);
+        effectChain.filter.Q.setTargetAtTime(1, ctx.currentTime, 0.05);
+        effectChain.values.filterFreq = 300;
+        effectChain.values.filterType = 'highpass';
+    } else {
+        effectChain.filter.type = 'lowpass';
+        effectChain.filter.frequency.setTargetAtTime(20000, ctx.currentTime, 0.05);
+        effectChain.filter.Q.setTargetAtTime(1, ctx.currentTime, 0.05);
+        effectChain.values.filterFreq = 20000;
+        effectChain.values.filterType = 'lowpass';
+    }
+}
+
 function resetAllEffects() {
     setVolume(1.0);
-    setFilterFrequency(20000);
+    setVocalIsolate(false);
     setDistortion(0);
     setDelayParams(0, 0);
     setReverbMix(0);
