@@ -180,3 +180,38 @@ def generate_ambient_music(duration_seconds: int = 120, session_label: str = "me
             f.write(chunk)
 
     return output_path
+
+
+def generate_narration(segments: list, session_label: str = "meditation"):
+    """Generate TTS narration audio for meditation segments using ElevenLabs.
+
+    Concatenates all segment texts with pause markers into one TTS call.
+
+    Returns:
+        str: path to the generated MP3 file
+    """
+    os.makedirs("output", exist_ok=True)
+    eleven_client = _get_eleven_client()
+
+    # Build full narration text with pauses
+    parts = []
+    for seg in segments:
+        parts.append(seg["text"])
+        pause_secs = seg.get("pause_seconds", 5)
+        # Add a break marker (SSML-like pause via ellipsis + silence)
+        parts.append("..." * min(pause_secs, 6))
+    full_text = "\n\n".join(parts)
+
+    # Use Rachel voice (known ID: 21m00Tcm4TlvDq8ikWAM)
+    audio = eleven_client.text_to_speech.convert(
+        voice_id="21m00Tcm4TlvDq8ikWAM",
+        model_id="eleven_multilingual_v2",
+        text=full_text,
+    )
+
+    output_path = f"output/narration_{session_label}.mp3"
+    with open(output_path, "wb") as f:
+        for chunk in audio:
+            f.write(chunk)
+
+    return output_path

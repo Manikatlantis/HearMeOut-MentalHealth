@@ -1,9 +1,54 @@
 // ============================================
-// Mental Health Questionnaire (Pre/Post Session)
+// Mental Health Check-In (4 targeted questions)
+// + Mode Selection (Music Therapy / Guided Meditation)
 // ============================================
 
-const QUESTIONNAIRE_QUESTIONS = [
-    "How connected do you feel to your emotions today?",
+const PRE_QUESTIONS = [
+    {
+        id: 'emotional_state',
+        text: 'How are you feeling right now?',
+        options: [
+            { label: 'Sad or down', value: 'sad' },
+            { label: 'Anxious or restless', value: 'anxious' },
+            { label: 'Angry or frustrated', value: 'angry' },
+            { label: 'Numb or empty', value: 'numb' },
+        ]
+    },
+    {
+        id: 'concern',
+        text: 'What\'s weighing on you the most?',
+        options: [
+            { label: 'A relationship', value: 'relationship' },
+            { label: 'Stress or pressure', value: 'stress' },
+            { label: 'Loss or grief', value: 'grief' },
+            { label: 'Feeling lost or stuck', value: 'lost' },
+        ]
+    },
+    {
+        id: 'therapeutic_goal',
+        text: 'What do you need from this session?',
+        options: [
+            { label: 'To feel understood', value: 'validation' },
+            { label: 'To let it out', value: 'release' },
+            { label: 'To find calm', value: 'calm' },
+            { label: 'To feel hopeful', value: 'hope' },
+        ]
+    },
+    {
+        id: 'intensity',
+        text: 'How intense are your feelings right now?',
+        options: [
+            { label: 'Mild — a light weight', value: 'mild' },
+            { label: 'Moderate — hard to ignore', value: 'moderate' },
+            { label: 'Heavy — it\'s a lot', value: 'heavy' },
+            { label: 'Overwhelming', value: 'overwhelming' },
+        ]
+    }
+];
+
+// Post-session questions (unchanged from original 9-question scale)
+const POST_QUESTIONS = [
+    "How connected do you feel to your emotions now?",
     "How much creative energy do you feel right now?",
     "How at ease does your mind feel?",
     "How open are you to exploring your feelings through music?",
@@ -13,7 +58,6 @@ const QUESTIONNAIRE_QUESTIONS = [
     "How calm does your body feel right now?",
     "How ready do you feel to let music guide your emotions?"
 ];
-
 const SCORE_LABELS = ["Not at all", "A little", "Moderately", "Very much"];
 
 const questionnaire = {
@@ -25,42 +69,92 @@ const questionnaire = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        container.innerHTML = QUESTIONNAIRE_QUESTIONS.map((q, i) => `
-            <div class="q-item">
-                <p class="q-text">${q}</p>
-                <div class="q-options">
-                    ${SCORE_LABELS.map((label, score) => `
-                        <button class="q-option" data-question="${i}" data-score="${score}" onclick="questionnaire.selectOption(this, '${containerId}')">
-                            <span class="q-score-dot"></span>
-                            <span class="q-label">${label}</span>
-                        </button>
-                    `).join('')}
+        if (containerId === 'preQuestions') {
+            // New 4-question format
+            container.innerHTML = PRE_QUESTIONS.map(q => `
+                <div class="q-item">
+                    <p class="q-text">${q.text}</p>
+                    <div class="q-options q-options-vertical">
+                        ${q.options.map(opt => `
+                            <button class="q-option q-option-wide" data-question="${q.id}" data-value="${opt.value}" onclick="questionnaire.selectOption(this, '${containerId}')">
+                                <span class="q-label">${opt.label}</span>
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+        } else {
+            // Post-session: original scale format
+            container.innerHTML = POST_QUESTIONS.map((q, i) => `
+                <div class="q-item">
+                    <p class="q-text">${q}</p>
+                    <div class="q-options">
+                        ${SCORE_LABELS.map((label, score) => `
+                            <button class="q-option" data-question="${i}" data-score="${score}" onclick="questionnaire.selectOption(this, '${containerId}')">
+                                <span class="q-score-dot"></span>
+                                <span class="q-label">${label}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
     },
 
     selectOption(btn, containerId) {
-        const questionIdx = btn.dataset.question;
+        const questionKey = btn.dataset.question || btn.dataset.questionId;
         const container = document.getElementById(containerId);
-        // Deselect other options for this question
-        container.querySelectorAll(`[data-question="${questionIdx}"]`).forEach(b => b.classList.remove('selected'));
+        container.querySelectorAll(`[data-question="${questionKey}"]`).forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
     },
 
-    collectAnswers(containerId) {
-        const container = document.getElementById(containerId);
+    collectPreAnswers() {
+        const answers = {};
+        for (const q of PRE_QUESTIONS) {
+            const selected = document.querySelector(`#preQuestions [data-question="${q.id}"].selected`);
+            if (!selected) return null;
+            answers[q.id] = selected.dataset.value;
+        }
+        return answers;
+    },
+
+    collectPostAnswers() {
         const answers = [];
-        for (let i = 0; i < QUESTIONNAIRE_QUESTIONS.length; i++) {
-            const selected = container.querySelector(`[data-question="${i}"].selected`);
-            if (!selected) return null; // Not all answered
+        for (let i = 0; i < POST_QUESTIONS.length; i++) {
+            const selected = document.querySelector(`#postQuestions [data-question="${i}"].selected`);
+            if (!selected) return null;
             answers.push(parseInt(selected.dataset.score));
         }
         return answers;
     },
 
+    buildTherapyProfile(answers) {
+        const moodMap = {
+            sad: 'melancholy', anxious: 'tense', angry: 'intense', numb: 'somber'
+        };
+        const directionMap = {
+            validation: 'lyrics about being seen and understood',
+            release: 'raw emotional expression and catharsis',
+            calm: 'soothing reassurance and peace',
+            hope: 'gentle encouragement and looking forward'
+        };
+        const energyMap = {
+            mild: 'low-medium', moderate: 'medium', heavy: 'medium-high', overwhelming: 'low'
+        };
+
+        return {
+            mood_hint: moodMap[answers.emotional_state] || 'reflective',
+            concern: answers.concern,
+            therapeutic_need: answers.therapeutic_goal,
+            lyric_direction: directionMap[answers.therapeutic_goal] || 'emotionally supportive',
+            energy_hint: energyMap[answers.intensity] || 'medium',
+            emotional_state: answers.emotional_state,
+            intensity: answers.intensity,
+        };
+    },
+
     async submitPre() {
-        const answers = this.collectAnswers('preQuestions');
+        const answers = this.collectPreAnswers();
         if (!answers) {
             const warning = document.getElementById('preWarning');
             if (warning) {
@@ -72,12 +166,12 @@ const questionnaire = {
 
         this.preAnswers = answers;
         this.sessionId = 'session_' + Date.now();
-
-        // Store in localStorage for later reference
         localStorage.setItem('current_session_id', this.sessionId);
-
-        // Mark pre-questionnaire as done for this session
         sessionStorage.setItem('questionnaire_pre_done', 'true');
+
+        // Build and store therapy profile
+        const profile = this.buildTherapyProfile(answers);
+        sessionStorage.setItem('therapy_profile', JSON.stringify(profile));
 
         // Send to backend
         try {
@@ -95,11 +189,17 @@ const questionnaire = {
             console.warn('Failed to save pre-questionnaire:', e);
         }
 
-        showScreen('inputScreen');
+        // Route based on mode
+        const mode = sessionStorage.getItem('hearmeout_mode');
+        if (mode === 'meditation') {
+            startStandaloneMeditation(profile);
+        } else {
+            showScreen('inputScreen');
+        }
     },
 
     async submitPost() {
-        const answers = this.collectAnswers('postQuestions');
+        const answers = this.collectPostAnswers();
         if (!answers) {
             const warning = document.getElementById('postWarning');
             if (warning) {
@@ -112,12 +212,10 @@ const questionnaire = {
         this.postAnswers = answers;
         const sessionId = this.sessionId || localStorage.getItem('current_session_id') || 'default';
 
-        // Ensure emotion data is persisted before fetching recap
         if (typeof saveEmotionData === 'function') saveEmotionData();
 
         showScreen('questionnaireResultScreen');
 
-        // Show loading state while we save + fetch recap
         const el = document.getElementById('questionnaireResult');
         if (el) {
             el.innerHTML = `
@@ -130,7 +228,6 @@ const questionnaire = {
             `;
         }
 
-        // Send post-questionnaire
         try {
             await fetch('/api/questionnaire', {
                 method: 'POST',
@@ -146,7 +243,6 @@ const questionnaire = {
             console.warn('Failed to save post-questionnaire:', e);
         }
 
-        // Fetch therapeutic recap
         try {
             const recapResp = await fetch('/api/session-recap', {
                 method: 'POST',
@@ -179,7 +275,6 @@ const questionnaire = {
             html += `<div class="recap-section"><span class="recap-section-icon">&#127911;</span><p>${this.escapeHtml(recap.emotion_insight)}</p></div>`;
         }
 
-        // Emotion arc visualization placeholder
         html += `<div id="emotionArcContainer"></div>`;
 
         if (recap.pre_score !== null && recap.pre_score !== undefined) {
@@ -202,7 +297,7 @@ const questionnaire = {
 
         html += `
             <div class="recap-actions">
-                <button class="q-submit-btn" onclick="showScreen('inputScreen')">
+                <button class="q-submit-btn" onclick="showScreen('modeSelectScreen')">
                     <span class="btn-text">New Session</span>
                     <span class="btn-icon">&rarr;</span>
                 </button>
@@ -214,7 +309,6 @@ const questionnaire = {
         html += `</div>`;
         el.innerHTML = html;
 
-        // Render emotion arc visualization
         if (typeof emotionArc !== 'undefined') {
             const arcContainer = document.getElementById('emotionArcContainer');
             if (arcContainer) {
@@ -240,7 +334,7 @@ const questionnaire = {
             <div class="q-result-card glass">
                 <div class="q-result-icon">&#9835;</div>
                 <p class="q-result-text">Thank you for sharing how you feel. Your reflections help personalize your experience.</p>
-                <button class="q-result-btn" onclick="showScreen('inputScreen')">
+                <button class="q-result-btn" onclick="showScreen('modeSelectScreen')">
                     <span class="btn-text">Continue</span>
                 </button>
             </div>
@@ -254,6 +348,12 @@ const questionnaire = {
         return div.innerHTML;
     }
 };
+
+// Mode selection
+function selectMode(mode) {
+    sessionStorage.setItem('hearmeout_mode', mode);
+    showScreen('questionnairePreScreen');
+}
 
 // Helper to get or create user ID
 function getUserId() {

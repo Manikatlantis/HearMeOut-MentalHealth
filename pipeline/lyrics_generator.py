@@ -216,7 +216,23 @@ Keep lyrics authentic and poetic — never preachy, clinical, or generic.
 Return ONLY the lyrics with [Verse 1], [Chorus], [Verse 2], [Bridge] section markers. No other text."""
 
     else:
-        # No therapeutic context — standard lyrics generation
+        # No emotional profile from chat — check for therapy profile from quiz
+        tp = context.therapy_profile
+        therapy_guidance = ""
+        if tp:
+            therapy_guidance = f"""
+
+THERAPY GUIDANCE (from user check-in):
+The user is feeling {tp.get('emotional_state', 'emotional difficulty')} about {tp.get('concern', 'something weighing on them')}.
+Their therapeutic need is {tp.get('therapeutic_need', 'support')}.
+Lyric direction: {tp.get('lyric_direction', 'emotionally supportive')}.
+Write lyrics that serve as emotional medicine:
+- Verse 1: Validate their experience
+- Chorus: Deliver the therapeutic message ({tp.get('therapeutic_need', 'support')})
+- Verse 2: Offer perspective and gentle reframing
+- Bridge: A shift in perspective, strength, or acceptance
+Keep lyrics authentic and poetic — never preachy, clinical, or generic."""
+
         prompt = f"""You are a professional songwriter. Based on the story/narrative and musical features below,
 write song lyrics with exactly this structure:
 
@@ -244,7 +260,7 @@ The lyrics should:
 
 Narrative/Story:
 {context.narrative}
-
+{therapy_guidance}
 Return ONLY the lyrics with [Verse 1], [Chorus], [Verse 2], [Bridge] section markers. No other text."""
 
     response = client.messages.create(

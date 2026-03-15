@@ -12,31 +12,32 @@ router = APIRouter()
 
 @router.post("/api/meditation")
 def meditation(request: MeditationRequest):
-    """Generate meditation script + ambient audio."""
+    """Generate meditation script + TTS narration."""
     ensure_user(request.user_id)
 
-    from pipeline.meditation_generator import generate_meditation_script, generate_ambient_music
+    from pipeline.meditation_generator import generate_meditation_script, generate_narration
 
     script = generate_meditation_script(
         story_context=request.story_context,
         mode=request.mode,
     )
 
-    # Generate ambient music
+    # Generate TTS narration (voice-guided meditation)
     label = request.session_id or str(uuid.uuid4())[:8]
+    narration_url = None
     try:
-        audio_path = generate_ambient_music(
-            duration_seconds=script["duration_estimate"],
+        narration_path = generate_narration(
+            segments=script["segments"],
             session_label=label,
         )
-        audio_url = "/audio/" + Path(audio_path).name
+        narration_url = "/audio/" + Path(narration_path).name
     except Exception as e:
-        print(f"Meditation audio generation failed: {e}")
-        audio_url = None
+        print(f"Meditation narration generation failed: {e}")
 
     return {
         "title": script["title"],
         "segments": script["segments"],
         "duration_estimate": script["duration_estimate"],
-        "audio_url": audio_url,
+        "narration_url": narration_url,
+        "audio_url": narration_url,  # backward compat
     }

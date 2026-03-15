@@ -9,3 +9,4 @@ class MeditationRequest(BaseModel):
     session_id: Optional[str] = None
     mode: str = "standalone"  # 'standalone' or 'story-connected'
     story_context: Optional[str] = None
+    therapy_profile: Optional[dict] = None

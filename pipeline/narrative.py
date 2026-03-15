@@ -75,6 +75,26 @@ Shape the narrative to acknowledge these feelings authentically, then gently gui
 {ep.get('therapeutic_need', 'healing')}. The narrative should feel like a journey — starting from where
 the user is emotionally, and moving toward a sense of resolution or hope by the end.
 Do NOT mention diagnoses or clinical terms. Keep it poetic and musical."""
+
+        # Therapy profile from quiz (fallback when no emotional_profile from chat)
+        tp = context.therapy_profile
+        if tp and not ep:
+            prompt += f"""
+
+THERAPY GUIDANCE (from check-in):
+The user is feeling {tp.get('emotional_state', 'emotional difficulty')} about {tp.get('concern', 'something weighing on them')}.
+Their therapeutic need is {tp.get('therapeutic_need', 'support')}.
+Desired energy: {tp.get('energy_hint', 'medium')}, mood direction: {tp.get('mood_hint', 'reflective')}.
+Lyric direction: {tp.get('lyric_direction', 'emotionally supportive')}.
+Shape the narrative to acknowledge these feelings authentically, then gently guide toward
+{tp.get('therapeutic_need', 'healing')}. Keep it poetic and musical."""
+        elif tp and ep:
+            # Both available — therapy profile adds energy/mood hints
+            prompt += f"""
+
+ADDITIONAL THERAPY HINTS (from check-in quiz):
+Desired energy: {tp.get('energy_hint', 'medium')}, mood direction: {tp.get('mood_hint', 'reflective')}."""
+
     else:
         prompt = f"""You are a creative music storyteller refining a musical narrative.
 

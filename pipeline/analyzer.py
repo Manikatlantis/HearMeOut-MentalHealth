@@ -85,6 +85,17 @@ Therapeutic need: {therapeutic_need}
 {guideline}
 These are evidence-based suggestions — adapt them to fit the genre naturally rather than overriding it."""
 
+    # Therapy profile hints from quiz (supplement, don't override)
+    tp = context.therapy_profile
+    if tp:
+        prompt += f"""
+
+THERAPY PROFILE HINTS (from user check-in quiz — use as additional guidance):
+Mood hint: {tp.get('mood_hint', 'reflective')}
+Energy level: {tp.get('energy_hint', 'medium')}
+Concern: {tp.get('concern', 'unspecified')}
+Use these hints to fine-tune the musical parameters when they don't conflict with the narrative."""
+
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,

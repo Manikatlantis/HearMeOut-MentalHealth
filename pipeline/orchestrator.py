@@ -16,9 +16,11 @@ class Orchestrator:
     STAGES = ["narrative", "analyze", "lyrics", "generate", "document"]
 
     def __init__(self, user_input: str, generator: str = "eleven",
-                 therapeutic_context: dict = None, emotional_profile: dict = None):
+                 therapeutic_context: dict = None, emotional_profile: dict = None,
+                 therapy_profile: dict = None):
         profile = emotional_profile or therapeutic_context
         self.context = PipelineContext(user_input, emotional_profile=profile)
+        self.context.therapy_profile = therapy_profile
         self.generator = generator
 
     def run_full_cycle(self):

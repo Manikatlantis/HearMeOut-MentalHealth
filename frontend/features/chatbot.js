@@ -15,7 +15,21 @@ const chatbot = {
         this.isOpen = !this.isOpen;
         if (this.isOpen) {
             panel.classList.add('open');
-            this.loadHistory();
+            // Show contextual welcome when on player screen
+            const onPlayer = document.getElementById('playerScreen') &&
+                             document.getElementById('playerScreen').classList.contains('active');
+            if (onPlayer && this.history.length === 0) {
+                const container = document.getElementById('chatMessages');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="chat-welcome">
+                            <p>I heard your song. How did it make you feel? Let's talk about it — I'm here to listen.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                this.loadHistory();
+            }
             const input = document.getElementById('chatInput');
             if (input) input.focus();
         } else {
@@ -119,13 +133,18 @@ const chatbot = {
             // Store emotional profile if present (with backward compat)
             if (data.emotional_profile) {
                 this.lastEmotionalProfile = data.emotional_profile;
+                sessionStorage.setItem('emotional_profile', JSON.stringify(data.emotional_profile));
             } else if (data.therapeutic_context) {
                 this.lastEmotionalProfile = data.therapeutic_context;
+                sessionStorage.setItem('emotional_profile', JSON.stringify(data.therapeutic_context));
             }
 
-            // Check if response contains a summary
+            // Show "use for song" after 2+ user messages or when summary arrives
+            const userMsgCount = this.history.filter(m => m.role === 'user').length;
             if (data.summary) {
                 this.lastSummary = data.summary;
+                this.showUseForSongBtn();
+            } else if (userMsgCount >= 2) {
                 this.showUseForSongBtn();
             }
         } catch (e) {
@@ -141,15 +160,18 @@ const chatbot = {
     },
 
     useForSong() {
-        if (!this.lastSummary) return;
+        const storyText = this.lastSummary ||
+            this.history.filter(m => m.role === 'user').map(m => m.content).join('. ');
+        if (!storyText) return;
         const textarea = document.getElementById('storyInput');
         if (textarea) {
-            textarea.value = this.lastSummary;
+            textarea.value = storyText;
             textarea.dispatchEvent(new Event('input'));
         }
         // Pass emotional profile to the generate flow
         window._emotionalProfile = this.lastEmotionalProfile || null;
         this.close();
+        showScreen('inputScreen');
     },
 
     handleKeydown(e) {

@@ -26,7 +26,9 @@ def process(request: ProcessRequest):
 
     # Prefer emotional_profile, fall back to therapeutic_context for backward compat
     profile = request.emotional_profile or request.therapeutic_context
-    orchestrator = Orchestrator(request.text, generator=request.generator, emotional_profile=profile)
+    orchestrator = Orchestrator(request.text, generator=request.generator,
+                                emotional_profile=profile,
+                                therapy_profile=request.therapy_profile)
     context = orchestrator.run_full_cycle()
     sessions[session_id] = orchestrator
 

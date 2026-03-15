@@ -44,6 +44,7 @@ class PipelineContext:
         self.original_input = user_input
         # Support both old therapeutic_context and new emotional_profile
         self.emotional_profile = emotional_profile or therapeutic_context
+        self.therapy_profile = None  # from quiz
         self.narrative = ""
         self.musical_features = MusicalFeatures()
         self.lyrics = ""

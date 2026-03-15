@@ -40,14 +40,70 @@ async function startMeditation() {
         meditationData = await response.json();
         titleEl.textContent = meditationData.title || 'Guided Meditation';
 
-        // Load ambient audio if available
-        if (meditationData.audio_url) {
+        // Load narration audio if available (TTS voice)
+        if (meditationData.narration_url) {
+            meditationAudio = new Audio(meditationData.narration_url);
+            meditationAudio.volume = 1.0;
+        } else if (meditationData.audio_url) {
             meditationAudio = new Audio(meditationData.audio_url);
             meditationAudio.loop = true;
             meditationAudio.volume = 0.3;
         }
 
-        // Start the guided segments
+        meditationSegmentIndex = 0;
+        meditationPaused = false;
+
+        // If we have narration audio, play it and sync text
+        if (meditationData.narration_url && meditationAudio) {
+            meditationAudio.play().catch(() => {});
+        }
+
+        playMeditationSegment();
+
+    } catch (e) {
+        textEl.textContent = 'Could not start meditation. Please try again.';
+    }
+}
+
+// Standalone meditation — called from quiz when meditation mode is selected
+async function startStandaloneMeditation(profile) {
+    showScreen('meditationScreen');
+
+    const textEl = document.getElementById('meditationText');
+    const titleEl = document.getElementById('meditationTitle');
+    const progressEl = document.getElementById('meditationProgress');
+
+    textEl.textContent = 'Creating your personalized meditation...';
+    titleEl.textContent = '';
+    if (progressEl) progressEl.style.width = '0%';
+
+    try {
+        const response = await fetch('/api/meditation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: getUserId(),
+                mode: 'standalone',
+                therapy_profile: profile
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate meditation');
+
+        meditationData = await response.json();
+        titleEl.textContent = meditationData.title || 'Guided Meditation';
+
+        // Load narration audio (TTS voice)
+        if (meditationData.narration_url) {
+            meditationAudio = new Audio(meditationData.narration_url);
+            meditationAudio.volume = 1.0;
+            meditationAudio.play().catch(() => {});
+        } else if (meditationData.audio_url) {
+            meditationAudio = new Audio(meditationData.audio_url);
+            meditationAudio.loop = true;
+            meditationAudio.volume = 0.3;
+        }
+
         meditationSegmentIndex = 0;
         meditationPaused = false;
         playMeditationSegment();
@@ -81,13 +137,13 @@ function playMeditationSegment() {
     const pct = ((meditationSegmentIndex + 1) / segments.length) * 100;
     if (progressEl) progressEl.style.width = pct + '%';
 
-    // Start ambient audio on first segment
-    if (meditationSegmentIndex === 0 && meditationAudio) {
+    // Start audio on first segment if not already playing
+    if (meditationSegmentIndex === 0 && meditationAudio && meditationAudio.paused) {
         meditationAudio.play().catch(() => {});
     }
 
     // Schedule next segment
-    const pauseMs = (segment.pause_seconds || 5) * 1000 + 4000; // pause + reading time
+    const pauseMs = (segment.pause_seconds || 5) * 1000 + 4000;
     meditationTimer = setTimeout(() => {
         meditationSegmentIndex++;
         playMeditationSegment();
@@ -143,9 +199,9 @@ function exitMeditation() {
     meditationSegmentIndex = 0;
     meditationPaused = false;
 
-    if (currentData) {
+    if (typeof currentData !== 'undefined' && currentData) {
         showScreen('playerScreen');
     } else {
-        showScreen('inputScreen');
+        showScreen('modeSelectScreen');
     }
 }
