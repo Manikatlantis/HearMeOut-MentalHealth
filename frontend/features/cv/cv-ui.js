@@ -46,6 +46,11 @@ async function toggleWebcam() {
             if (gestureReady) {
                 startGestureMixer();
                 document.getElementById('effectIndicators').classList.add('visible');
+                // Init hand geometry canvas
+                const hgCanvas = document.getElementById('handGeometryCanvas');
+                if (hgCanvas && typeof handGeometry !== 'undefined') {
+                    handGeometry.init(hgCanvas);
+                }
             }
         } catch (e) {
             console.warn('Camera access denied:', e);
@@ -66,10 +71,31 @@ function stopWebcam() {
     if (video) video.srcObject = null;
 
     document.getElementById('webcamOverlay').classList.remove('visible');
+    document.getElementById('webcamOverlay').classList.remove('meditation-mode');
     document.getElementById('effectIndicators').classList.remove('visible');
 
+    if (typeof handGeometry !== 'undefined') handGeometry.destroy();
     stopGestureMixer();
     stopEmotionTracking();
+}
+
+// --- Persistent webcam across screens ---
+function updateWebcamForScreen(screenId) {
+    const overlay = document.getElementById('webcamOverlay');
+    if (!overlay || !cvUI.webcamActive) return;
+
+    if (screenId === 'playerScreen' || screenId === 'meditationScreen') {
+        overlay.classList.add('visible');
+        if (screenId === 'meditationScreen') {
+            overlay.classList.add('meditation-mode');
+        } else {
+            overlay.classList.remove('meditation-mode');
+        }
+    } else {
+        // Keep stream alive but hide overlay on other screens
+        overlay.classList.remove('meditation-mode');
+        overlay.classList.remove('visible');
+    }
 }
 
 // --- Effect Indicator Bar ---

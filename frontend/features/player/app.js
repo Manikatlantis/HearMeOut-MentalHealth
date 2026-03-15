@@ -39,6 +39,9 @@ function showScreen(id) {
     if (id === 'questionnairePostScreen' && typeof questionnaire !== 'undefined') {
         questionnaire.renderQuestions('postQuestions');
     }
+
+    // Keep webcam overlay in sync with active screen
+    if (typeof updateWebcamForScreen === 'function') updateWebcamForScreen(id);
 }
 
 // ---- Generate Song ----

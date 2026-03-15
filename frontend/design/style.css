@@ -854,10 +854,29 @@ audio { display: none; }
     transform: scale(1) translateY(0);
     pointer-events: auto;
 }
+.webcam-overlay.meditation-mode {
+    width: 320px;
+    height: 240px;
+    border-radius: 50%;
+    bottom: 50%;
+    right: 50%;
+    transform: translate(50%, 50%);
+    border: 2px solid var(--teal);
+    box-shadow: 0 0 30px var(--teal-glow), 0 0 60px rgba(45, 212, 191, 0.1);
+}
 .cv-video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transform: scaleX(-1);
+}
+.hand-geometry-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
     transform: scaleX(-1);
 }
 
@@ -1144,6 +1163,7 @@ audio { display: none; }
     .player-card { padding: 24px; }
     .album-art { width: 140px; height: 140px; }
     .webcam-overlay { width: 160px; height: 120px; bottom: 10px; right: 10px; }
+    .webcam-overlay.meditation-mode { width: 240px; height: 180px; }
     .effect-indicators { flex-wrap: wrap; max-width: 90vw; bottom: 140px; }
     .fx-pill { padding: 4px 8px; font-size: 10px; }
     .gesture-guide { width: 90vw; }
