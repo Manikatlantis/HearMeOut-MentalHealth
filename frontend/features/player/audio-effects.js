@@ -193,6 +193,22 @@ function setVocalIsolate(active) {
     }
 }
 
+function setBestVersion() {
+    if (!effectChain) return;
+    const ctx = effectChain.audioCtx;
+    // Full-range, clean playback — no filters, no distortion, slight volume boost
+    effectChain.filter.type = 'lowpass';
+    effectChain.filter.frequency.setTargetAtTime(20000, ctx.currentTime, 0.05);
+    effectChain.filter.Q.setTargetAtTime(1, ctx.currentTime, 0.05);
+    effectChain.values.filterFreq = 20000;
+    effectChain.values.filterType = 'lowpass';
+    setDistortion(0);
+    setDelayParams(0, 0);
+    setReverbMix(0);
+    setStereoPan(0);
+    setVolume(1.2);
+}
+
 function resetAllEffects() {
     setVolume(1.0);
     setVocalIsolate(false);

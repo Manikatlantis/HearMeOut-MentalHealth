@@ -37,7 +37,8 @@ const handGeometry = {
     GESTURE_COLORS: {
         volume_up:     '#f97316',
         volume_down:   '#6366f1',
-        bass_boost:    '#f472b6',
+        open_palm:     '#22d3ee',
+        bass_heavy:    '#f472b6',
         vocal_isolate: '#2dd4bf',
         heart:         '#fb7185',
         dbz_charge:    '#fbbf24'
@@ -326,20 +327,19 @@ const handGeometry = {
     // --- Heart Particles ---
 
     _spawnHeartParticles(cx, cy) {
-        const count = 2 + Math.floor(Math.random() * 2);
-        for (let i = 0; i < count; i++) {
-            this.heartParticles.push({
-                x: cx + (Math.random() - 0.5) * 30,
-                y: cy,
-                vx: (Math.random() - 0.5) * 2,
-                vy: -(1 + Math.random() * 2.5),
-                size: 8 + Math.random() * 14,
-                life: 1.0,
-                hue: Math.random() > 0.5 ? '#fb7185' : '#f472b6'
-            });
-        }
-        if (this.heartParticles.length > 60) {
-            this.heartParticles.splice(0, this.heartParticles.length - 60);
+        // Spawn 1 heart every other frame on average
+        if (Math.random() > 0.5) return;
+        this.heartParticles.push({
+            x: cx + (Math.random() - 0.5) * 20,
+            y: cy,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: -(1 + Math.random() * 2),
+            size: 28 + Math.random() * 20,
+            life: 1.0,
+            hue: Math.random() > 0.3 ? '#dc2626' : '#ef4444'
+        });
+        if (this.heartParticles.length > 15) {
+            this.heartParticles.splice(0, this.heartParticles.length - 15);
         }
     },
 

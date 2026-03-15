@@ -1,6 +1,6 @@
 // ============================================
 // Gesture Mixer — MediaPipe Hands integration
-// 6 gestures: volume up/down, bass boost, vocal isolate, heart, DBZ energy ball
+// 7 gestures: volume up/down, open palm (best version), fist (bass heavy), vocal isolate, heart, DBZ energy ball
 // ============================================
 
 let gestureMixer = {
@@ -125,6 +125,7 @@ function processGestures(results) {
 
         // Single-hand gestures
         detectVolumeGesture(lm);
+        detectOpenPalm(lm);
         detectFistGesture(lm);
         detectPeaceSign(lm);
     }
@@ -156,6 +157,26 @@ function detectVolumeGesture(lm) {
     }
 }
 
+function detectOpenPalm(lm) {
+    // All fingers extended and spread apart
+    const indexUp = lm[8].y < lm[6].y;
+    const middleUp = lm[12].y < lm[10].y;
+    const ringUp = lm[16].y < lm[14].y;
+    const pinkyUp = lm[20].y < lm[18].y;
+
+    if (!indexUp || !middleUp || !ringUp || !pinkyUp) return;
+
+    // Check fingers are spread: adjacent fingertips far enough apart
+    const idxMidDist = distance2D(lm[8], lm[12]);
+    const midRingDist = distance2D(lm[12], lm[16]);
+    const ringPinkyDist = distance2D(lm[16], lm[20]);
+    const avgSpread = (idxMidDist + midRingDist + ringPinkyDist) / 3;
+
+    if (avgSpread > 0.04) {
+        gestureMixer.activeGestures.add('open_palm');
+    }
+}
+
 function detectFistGesture(lm) {
     // All fingertips close to palm
     const palm = lm[9];
@@ -166,7 +187,7 @@ function detectFistGesture(lm) {
     }
     const avgDist = totalDist / 4;
     if (avgDist < 0.08) {
-        gestureMixer.activeGestures.add('bass_boost');
+        gestureMixer.activeGestures.add('bass_heavy');
         gestureMixer._fistTightness = Math.min(1, 1 - (avgDist / 0.08));
     }
 }
@@ -253,7 +274,7 @@ function applyGesturesToEffects() {
     const g = gestureMixer.activeGestures;
 
     // If no audio gestures active, reset
-    const hasAudio = g.has('volume_up') || g.has('volume_down') || g.has('bass_boost') || g.has('vocal_isolate');
+    const hasAudio = g.has('volume_up') || g.has('volume_down') || g.has('bass_heavy') || g.has('vocal_isolate') || g.has('open_palm');
     if (!hasAudio) {
         resetAllEffects();
         return;
@@ -263,8 +284,12 @@ function applyGesturesToEffects() {
     if (g.has('volume_up')) setVolume(1.5);
     else if (g.has('volume_down')) setVolume(0.3);
 
-    // Bass boost (fist) — takes priority over vocal isolate
-    if (g.has('bass_boost')) {
+    // Open palm (best version) — reset to clean, full-range playback
+    if (g.has('open_palm')) {
+        setBestVersion();
+    }
+    // Bass heavy (fist) — takes priority over vocal isolate
+    else if (g.has('bass_heavy')) {
         setBassBoost(gestureMixer._fistTightness || 0.7);
     }
     // Vocal isolate (peace sign)
