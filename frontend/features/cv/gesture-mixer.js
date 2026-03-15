@@ -15,7 +15,8 @@ let gestureMixer = {
     _energyMidpoint: null,
     _energyBallReleased: false,
     _energyReleasePos: null,
-    _prevWristDist: 0
+    _prevWristDist: 0,
+    _handVolume: undefined
 };
 
 function initGestureMixer(videoElement) {
@@ -149,23 +150,17 @@ function processGestures(results) {
 }
 
 function detectVolumeGesture(lm) {
-    // Thumbs up / thumbs down — thumb extended while all other fingers curled
-    const palm = lm[9];
-    const tips = [lm[8], lm[12], lm[16], lm[20]];
-    let curledCount = 0;
-    for (const tip of tips) {
-        if (distance2D(tip, palm) < 0.10) curledCount++;
-    }
-    if (curledCount < 3) return; // Need at least 3 of 4 fingers curled
-
-    // Check thumb is extended (tip far from palm)
-    const thumbDist = distance2D(lm[4], palm);
-    if (thumbDist < 0.10) return; // Thumb not extended
-
-    // Direction: thumb tip above thumb MCP = up, below = down
-    if (lm[4].y < lm[2].y - 0.04) {
+    // Continuous volume control based on wrist height
+    // Top of frame (y=0) → volume 2.0, bottom (y=1) → volume 0.1
+    // Middle (y=0.5) → volume ~1.0 (neutral)
+    const wristY = lm[0].y;
+    // Map: y=0 → vol=2.0, y=0.5 → vol=1.0, y=1.0 → vol=0.1
+    const vol = 2.0 - wristY * 1.9;
+    gestureMixer._handVolume = Math.max(0.1, Math.min(2.0, vol));
+    // Only flag as active gesture when clearly away from center
+    if (wristY < 0.35) {
         gestureMixer.activeGestures.add('volume_up');
-    } else if (lm[4].y > lm[2].y + 0.04) {
+    } else if (wristY > 0.65) {
         gestureMixer.activeGestures.add('volume_down');
     }
 }
@@ -289,30 +284,29 @@ function applyGesturesToEffects() {
 
     const g = gestureMixer.activeGestures;
 
-    // If no audio gestures active, reset
-    const hasAudio = g.has('volume_up') || g.has('volume_down') || g.has('bass_heavy') || g.has('vocal_isolate') || g.has('open_palm');
-    if (!hasAudio) {
-        resetAllEffects();
-        return;
+    // Mode gestures (filter/distortion/reverb effects)
+    const hasMode = g.has('bass_heavy') || g.has('vocal_isolate') || g.has('open_palm');
+    if (hasMode) {
+        if (g.has('open_palm')) {
+            setBestVersion();
+        } else if (g.has('bass_heavy')) {
+            setBassBoost(gestureMixer._fistTightness || 0.7);
+        } else if (g.has('vocal_isolate')) {
+            setVocalIsolate(true);
+        }
+    } else {
+        // No mode gesture — reset filter/distortion/reverb but NOT volume
+        setVocalIsolate(false);
+        setDistortion(0);
+        setDelayParams(0, 0);
+        setReverbMix(0);
+        setStereoPan(0);
     }
 
-    // Mode effects first
-    // Open palm (best version) — reset to clean, full-range playback
-    if (g.has('open_palm')) {
-        setBestVersion();
+    // Volume ALWAYS from hand height — independent of other gestures
+    if (gestureMixer._handVolume !== undefined) {
+        setVolume(gestureMixer._handVolume);
     }
-    // Bass heavy (fist) — takes priority over vocal isolate
-    else if (g.has('bass_heavy')) {
-        setBassBoost(gestureMixer._fistTightness || 0.7);
-    }
-    // Vocal isolate (peace sign)
-    else if (g.has('vocal_isolate')) {
-        setVocalIsolate(true);
-    }
-
-    // Volume LAST — overrides any volume set by mode effects
-    if (g.has('volume_up')) setVolume(1.5);
-    else if (g.has('volume_down')) setVolume(0.3);
 }
 
 // --- Getters for UI/Three.js ---

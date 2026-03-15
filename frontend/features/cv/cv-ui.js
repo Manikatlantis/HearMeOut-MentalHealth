@@ -239,8 +239,8 @@ const _gestureSuggestions = [
     { gesture: 'open_palm', icon: '🖐', text: 'Open palm — Best version' },
     { gesture: 'bass_heavy', icon: '✊', text: 'Fist — Bass heavy' },
     { gesture: 'vocal_isolate', icon: '✌️', text: 'Peace — Vocal isolate' },
-    { gesture: 'volume_up', icon: '👍', text: 'Thumbs up — Volume up' },
-    { gesture: 'volume_down', icon: '👎', text: 'Thumbs down — Volume down' },
+    { gesture: 'volume_up', icon: '✋↑', text: 'Raise hand — Volume up' },
+    { gesture: 'volume_down', icon: '✋↓', text: 'Lower hand — Volume down' },
     { gesture: 'heart', icon: '🫶', text: 'Heart hands — Floating hearts' },
     { gesture: 'dbz_charge', icon: '🔮', text: 'Cup hands — Energy ball' }
 ];
@@ -252,17 +252,17 @@ function updateGestureSuggestion() {
     const active = typeof getActiveGestures !== 'undefined' ? getActiveGestures() : new Set();
 
     if (active.size === 0) {
-        // No gesture — suggest a random one
-        const suggestion = _gestureSuggestions[Math.floor(Math.random() * 3)]; // bias toward first 3 (main ones)
+        // No gesture — suggest any random one from the full list
+        const suggestion = _gestureSuggestions[Math.floor(Math.random() * _gestureSuggestions.length)];
         el.textContent = `Try: ${suggestion.icon} ${suggestion.text}`;
         el.classList.add('visible');
         return;
     }
 
-    // Find a gesture NOT currently active to suggest next
+    // Find a gesture NOT currently active to suggest next (pick from all)
     const inactiveOnes = _gestureSuggestions.filter(s => !active.has(s.gesture));
     if (inactiveOnes.length > 0) {
-        const next = inactiveOnes[Math.floor(Math.random() * Math.min(3, inactiveOnes.length))];
+        const next = inactiveOnes[Math.floor(Math.random() * inactiveOnes.length)];
         el.textContent = `Next: ${next.icon} ${next.text}`;
     }
     el.classList.add('visible');

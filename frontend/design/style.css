@@ -1350,6 +1350,9 @@ audio { display: none; }
     .lyrics-overlay-split .webcam-dock { flex: none; width: 80%; max-width: 350px; max-height: 260px; }
     #playerScreen, #meditationScreen { max-width: 640px; }
     .meditation-webcam-dock { width: 240px; height: 240px; }
+    .meditation-breath-ring { width: 270px; height: 270px; }
+    .meditation-breath-ring::before { width: 300px; height: 300px; }
+    .meditation-breath-ring::after { width: 330px; height: 330px; }
     .effect-indicators { gap: 3px; bottom: 4px; }
     .fx-pill { padding: 4px 8px; font-size: 10px; }
     .gesture-guide { width: 90vw; }
@@ -1513,7 +1516,8 @@ audio { display: none; }
     min-height: 60vh;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 24px;
+    overflow: hidden;
 }
 .meditation-header {
     display: flex;
@@ -1554,46 +1558,89 @@ audio { display: none; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 40px;
+    gap: 30px;
+    overflow: hidden;
+}
+
+/* Camera + breath ring wrapper — ring orbits around camera */
+.meditation-cam-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .meditation-webcam-dock {
-    width: 320px;
-    height: 320px;
+    width: 340px;
+    height: 340px;
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid var(--teal);
     box-shadow: 0 0 30px var(--teal-glow), 0 0 60px rgba(45, 212, 191, 0.1);
+    position: relative;
+    z-index: 2;
 }
 .meditation-webcam-dock .webcam-overlay {
     border-radius: 50%;
 }
+
+/* Concentric breath rings around the camera */
 .meditation-breath-ring {
-    width: 120px;
-    height: 120px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 380px;
+    height: 380px;
     border-radius: 50%;
-    border: 2px solid var(--teal);
-    opacity: 0.4;
+    border: 1.5px solid var(--teal);
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(0.95);
     animation: meditationBreathe 6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+.meditation-breath-ring::before,
+.meditation-breath-ring::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    border: 1px solid var(--teal);
+    opacity: 0.5;
+    pointer-events: none;
+}
+.meditation-breath-ring::before {
+    width: 420px;
+    height: 420px;
+    transform: translate(-50%, -50%);
+    animation: meditationBreathe 6s ease-in-out 0.5s infinite;
+}
+.meditation-breath-ring::after {
+    width: 460px;
+    height: 460px;
+    transform: translate(-50%, -50%);
+    animation: meditationBreathe 6s ease-in-out 1s infinite;
 }
 @keyframes meditationBreathe {
-    0%, 100% { transform: scale(0.8); opacity: 0.3; border-color: var(--teal); }
-    50% { transform: scale(1.3); opacity: 0.6; border-color: var(--lavender); }
+    0%, 100% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.2; border-color: var(--teal); }
+    50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.5; border-color: var(--lavender); }
 }
 .meditation-text {
-    font-size: 20px;
-    line-height: 1.8;
+    font-size: 18px;
+    line-height: 1.7;
     color: var(--text);
     max-width: 480px;
     transition: opacity 0.5s ease;
     font-weight: 300;
     letter-spacing: 0.3px;
+    padding: 0 20px;
 }
 .meditation-progress-bar {
     width: 200px;
     height: 2px;
     background: rgba(255, 255, 255, 0.06);
     border-radius: 2px;
-    margin: 30px auto;
+    margin: 10px auto;
     overflow: hidden;
 }
 .meditation-progress-fill {
@@ -1607,6 +1654,7 @@ audio { display: none; }
     display: flex;
     gap: 12px;
     justify-content: center;
+    padding-bottom: 10px;
 }
 .meditation-btn {
     padding: 10px 24px;

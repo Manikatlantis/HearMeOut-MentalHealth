@@ -55,8 +55,8 @@
             <button class="gesture-guide-close" onclick="toggleGestureGuide()">✕</button>
         </div>
         <div class="gesture-list">
-            <div class="gesture-item"><span class="gesture-icon">👍</span><span>Thumbs up — Volume up</span></div>
-            <div class="gesture-item"><span class="gesture-icon">👎</span><span>Thumbs down — Volume down</span></div>
+            <div class="gesture-item"><span class="gesture-icon">✋↑</span><span>Raise hand — Volume up</span></div>
+            <div class="gesture-item"><span class="gesture-icon">✋↓</span><span>Lower hand — Volume down</span></div>
             <div class="gesture-item"><span class="gesture-icon">🖐</span><span>Open palm — Best version</span></div>
             <div class="gesture-item"><span class="gesture-icon">✊</span><span>Fist — Bass heavy</span></div>
             <div class="gesture-item"><span class="gesture-icon">✌️</span><span>Peace sign — Vocal isolate</span></div>
@@ -390,8 +390,10 @@
                     <button class="meditation-close" onclick="exitMeditation()">✕</button>
                 </div>
                 <div class="meditation-body">
-                    <div class="webcam-dock meditation-webcam-dock" id="meditationWebcamDock"></div>
-                    <div class="meditation-breath-ring"></div>
+                    <div class="meditation-cam-wrapper">
+                        <div class="webcam-dock meditation-webcam-dock" id="meditationWebcamDock"></div>
+                        <div class="meditation-breath-ring"></div>
+                    </div>
                     <p class="meditation-text" id="meditationText">Preparing your meditation...</p>
                 </div>
                 <div class="meditation-progress-bar">
