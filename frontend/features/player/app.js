@@ -72,6 +72,11 @@ async function generate() {
             processBody.emotional_profile = window._emotionalProfile;
             window._emotionalProfile = null;
         }
+        // Include therapy profile from quiz if available
+        const storedProfile = sessionStorage.getItem('therapy_profile');
+        if (storedProfile) {
+            processBody.therapy_profile = JSON.parse(storedProfile);
+        }
         const response = await fetch('/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -142,10 +147,8 @@ function displayResults(data) {
     document.getElementById('trackTitle').textContent =
         capitalize(f.mood) + ' ' + capitalize(f.genre);
 
-    // Tags
-    const tags = [f.genre, f.mood, f.tempo + ' BPM', f.scale, f.dynamics, ...f.instruments];
-    document.getElementById('trackTags').innerHTML =
-        tags.map(t => `<span class="tag">${t}</span>`).join('');
+    // Hide technical music tags — not relevant for mental health experience
+    document.getElementById('trackTags').innerHTML = '';
 
     // Lyrics
     document.getElementById('lyricsStatic').textContent = data.lyrics || 'No lyrics';
@@ -497,17 +500,19 @@ function reset() {
         if (btnText) btnText.textContent = 'Camera';
     }
 
-    showScreen('inputScreen');
+    // Clear session state so user picks mode again
+    sessionStorage.removeItem('questionnaire_pre_done');
+    sessionStorage.removeItem('therapy_profile');
+    sessionStorage.removeItem('hearmeout_mode');
+    if (typeof questionnaire !== 'undefined') {
+        questionnaire.preAnswers = null;
+        questionnaire.postAnswers = null;
+    }
+
+    showScreen('modeSelectScreen');
 }
 
 // ---- Iterate Panel ----
-const MOOD_OPTIONS = ['happy', 'sad', 'energetic', 'calm', 'melancholy', 'aggressive', 'romantic', 'dark', 'euphoric', 'nostalgic'];
-const GENRE_OPTIONS = ['pop', 'rock', 'hip-hop', 'jazz', 'classical', 'electronic', 'r&b', 'folk', 'country', 'metal', 'ambient', 'reggae', 'blues', 'indie'];
-const INSTRUMENT_OPTIONS = ['piano', 'guitar', 'drums', 'bass', 'violin', 'synth', 'trumpet', 'flute', 'cello', 'saxophone', 'harmonica', 'ukulele', 'tabla', 'sitar'];
-const DYNAMICS_OPTIONS = ['soft', 'moderate', 'loud', 'building', 'explosive', 'whisper'];
-
-let iterateSelections = { moods: [], genres: [], instruments: [], dynamics: [] };
-
 function toggleIteratePanel() {
     const panel = document.getElementById('iteratePanel');
     if (panel.style.display === 'none') {
@@ -515,87 +520,14 @@ function toggleIteratePanel() {
         panel.style.animation = 'none';
         panel.offsetHeight;
         panel.style.animation = 'slideDown 0.4s ease forwards';
-        populateIterateChips();
     } else {
         panel.style.display = 'none';
     }
 }
 
-function populateIterateChips() {
-    if (!currentData) return;
-    const f = currentData.musical_features;
-
-    // Set tempo slider
-    document.getElementById('iterTempo').value = f.tempo;
-    document.getElementById('iterTempoVal').textContent = f.tempo;
-
-    // Pre-select current values
-    iterateSelections.moods = [f.mood];
-    iterateSelections.genres = [f.genre];
-    iterateSelections.instruments = [...f.instruments];
-    iterateSelections.dynamics = [f.dynamics];
-
-    renderChips('moodChips', MOOD_OPTIONS, iterateSelections.moods, 'moods');
-    renderChips('genreChips', GENRE_OPTIONS, iterateSelections.genres, 'genres');
-    renderChips('instrumentChips', INSTRUMENT_OPTIONS, iterateSelections.instruments, 'instruments');
-    renderChips('dynamicsChips', DYNAMICS_OPTIONS, iterateSelections.dynamics, 'dynamics');
-}
-
-function renderChips(containerId, options, selected, key) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = options.map(opt => {
-        const active = selected.includes(opt) ? 'active' : '';
-        return `<button class="chip ${active}" onclick="toggleChip('${key}','${opt}','${containerId}')">${opt}</button>`;
-    }).join('');
-}
-
-function toggleChip(key, value, containerId) {
-    const arr = iterateSelections[key];
-    const idx = arr.indexOf(value);
-    if (idx >= 0) {
-        arr.splice(idx, 1);
-    } else {
-        // For dynamics and genres, only allow one selection
-        if (key === 'dynamics' || key === 'genres') {
-            arr.length = 0;
-        }
-        arr.push(value);
-    }
-
-    const optionsMap = { moods: MOOD_OPTIONS, genres: GENRE_OPTIONS, instruments: INSTRUMENT_OPTIONS, dynamics: DYNAMICS_OPTIONS };
-    renderChips(containerId, optionsMap[key], arr, key);
-}
-
 function buildFeedbackString() {
-    const parts = [];
-    const f = currentData.musical_features;
-    const newTempo = parseInt(document.getElementById('iterTempo').value);
-
-    if (newTempo !== f.tempo) {
-        parts.push(`Change tempo to ${newTempo} BPM`);
-    }
-    if (iterateSelections.moods.length && iterateSelections.moods[0] !== f.mood) {
-        parts.push(`Change mood to ${iterateSelections.moods.join(', ')}`);
-    }
-    if (iterateSelections.genres.length && iterateSelections.genres[0] !== f.genre) {
-        parts.push(`Change genre to ${iterateSelections.genres.join(', ')}`);
-    }
-
-    const origInst = new Set(f.instruments);
-    const newInst = new Set(iterateSelections.instruments);
-    const added = iterateSelections.instruments.filter(i => !origInst.has(i));
-    const removed = f.instruments.filter(i => !newInst.has(i));
-    if (added.length) parts.push(`Add instruments: ${added.join(', ')}`);
-    if (removed.length) parts.push(`Remove instruments: ${removed.join(', ')}`);
-
-    if (iterateSelections.dynamics.length && iterateSelections.dynamics[0] !== f.dynamics) {
-        parts.push(`Change dynamics to ${iterateSelections.dynamics[0]}`);
-    }
-
     const notes = document.getElementById('iterNotes').value.trim();
-    if (notes) parts.push(notes);
-
-    return parts.join('. ') || 'Regenerate with similar settings';
+    return notes || 'Regenerate with similar settings';
 }
 
 async function iterate() {
@@ -629,6 +561,54 @@ async function iterate() {
         if (!response.ok) throw new Error('Refinement failed');
 
         currentData = await response.json();
+        displayResults(currentData);
+        showScreen('playerScreen');
+    } catch (e) {
+        document.getElementById('loaderText').textContent = 'Error: ' + e.message;
+        setTimeout(() => showScreen('playerScreen'), 2000);
+    }
+}
+
+// ---- Recap Refine Panel ----
+function toggleRecapRefinePanel() {
+    const panel = document.getElementById('recapIteratePanel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        panel.style.animation = 'none';
+        panel.offsetHeight;
+        panel.style.animation = 'slideDown 0.4s ease forwards';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+async function iterateFromRecap() {
+    const notes = document.getElementById('recapIterNotes').value.trim();
+    const feedback = notes || 'Regenerate with similar settings';
+
+    showScreen('loadingScreen');
+    animateProgress();
+
+    try {
+        const response = await fetch('/refine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                feedback,
+                session_id: currentSessionId || (currentData ? currentData.session_id : 'default'),
+                user_id: getUserId()
+            })
+        });
+
+        if (!response.ok) throw new Error('Refinement failed');
+
+        currentData = await response.json();
+
+        // Reset post-questionnaire state so the flow can repeat
+        if (typeof questionnaire !== 'undefined') {
+            questionnaire.postAnswers = null;
+        }
+
         displayResults(currentData);
         showScreen('playerScreen');
     } catch (e) {

@@ -11,6 +11,7 @@ class ProcessRequest(BaseModel):
     user_id: str = "anonymous"
     emotional_profile: Optional[dict] = None
     therapeutic_context: Optional[dict] = None  # backward compat alias
+    therapy_profile: Optional[dict] = None
 
 
 class FeedbackRequest(BaseModel):

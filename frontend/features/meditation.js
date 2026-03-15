@@ -8,6 +8,68 @@ let meditationSegmentIndex = 0;
 let meditationTimer = null;
 let meditationPaused = false;
 
+// Standalone meditation triggered from mode selection (with therapy profile)
+async function startStandaloneMeditation(profile) {
+    const userId = getUserId();
+    const sessionId = (typeof questionnaire !== 'undefined' && questionnaire.sessionId)
+        ? questionnaire.sessionId : 'session_' + Date.now();
+
+    showScreen('meditationScreen');
+
+    const textEl = document.getElementById('meditationText');
+    const titleEl = document.getElementById('meditationTitle');
+    const progressEl = document.getElementById('meditationProgress');
+
+    textEl.textContent = 'Preparing your meditation...';
+    titleEl.textContent = '';
+    if (progressEl) progressEl.style.width = '0%';
+
+    // Build context from therapy profile
+    let storyContext = null;
+    if (profile) {
+        const goalDescriptions = {
+            comfort: 'finding comfort and reassurance',
+            motivation: 'building inner strength and motivation',
+            distraction: 'letting go and finding a peaceful escape',
+            validation: 'feeling understood and accepted',
+            release: 'releasing tension and pent-up emotions',
+            calm: 'deep relaxation and inner calm',
+        };
+        storyContext = `The listener is feeling ${profile.emotional_state || 'uncertain'} and dealing with ${profile.concern || 'general unease'}. They need ${goalDescriptions[profile.therapeutic_goal] || 'comfort'}. Intensity: ${profile.intensity || 'moderate'}.`;
+    }
+
+    try {
+        const response = await fetch('/api/meditation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                session_id: sessionId,
+                mode: 'standalone',
+                story_context: storyContext
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate meditation');
+
+        meditationData = await response.json();
+        titleEl.textContent = meditationData.title || 'Guided Meditation';
+
+        if (meditationData.audio_url) {
+            meditationAudio = new Audio(meditationData.audio_url);
+            meditationAudio.loop = true;
+            meditationAudio.volume = 0.3;
+        }
+
+        meditationSegmentIndex = 0;
+        meditationPaused = false;
+        playMeditationSegment();
+
+    } catch (e) {
+        textEl.textContent = 'Could not start meditation. Please try again.';
+    }
+}
+
 async function startMeditation() {
     const userId = getUserId();
     const sessionId = currentData ? currentData.session_id : null;
@@ -146,6 +208,10 @@ function exitMeditation() {
     if (currentData) {
         showScreen('playerScreen');
     } else {
-        showScreen('inputScreen');
+        // Clear session state for fresh start
+        sessionStorage.removeItem('questionnaire_pre_done');
+        sessionStorage.removeItem('therapy_profile');
+        sessionStorage.removeItem('hearmeout_mode');
+        showScreen('modeSelectScreen');
     }
 }

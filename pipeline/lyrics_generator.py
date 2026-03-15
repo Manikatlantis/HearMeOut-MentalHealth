@@ -109,6 +109,19 @@ def generate_lyrics(context):
 
     ep = context.emotional_profile
 
+    # Build therapy-informed lyric direction (from quiz)
+    therapy_lyric_guidance = ""
+    if context.therapy_profile:
+        tp = context.therapy_profile
+        therapy_lyric_guidance = f"""
+
+CRITICAL — Therapeutic Direction (from mental health quiz):
+The listener is feeling {tp.get('emotional_state', 'unknown')} and dealing with {tp.get('concern', 'unknown')}.
+They want: {tp.get('therapeutic_goal', 'comfort')}.
+{tp.get('lyric_direction', '')}
+Intensity: {tp.get('intensity', 'moderate')} — {'keep imagery soft and gentle' if tp.get('intensity') == 'gentle' else 'go deep emotionally' if tp.get('intensity') == 'deep' else 'balance depth with accessibility'}.
+"""
+
     if ep and ep.get('emotional_domain'):
         # Rich emotional profile — use domain-aware therapeutic lyrics prompt
         domain = ep.get('emotional_domain', '')
@@ -167,7 +180,7 @@ SECTION ROLES:
 
 BALANCE: Each section must have specificity (their story), beauty (poetic and singable),
 and validation (their pain is real). Only the chorus and bridge should gently reframe.
-
+{therapy_lyric_guidance}
 Return ONLY the lyrics with [Verse 1], [Chorus], [Verse 2], [Bridge] section markers. No other text."""
 
     elif ep:
@@ -212,7 +225,7 @@ Write lyrics that serve as emotional medicine:
 - Verse 2: Offer perspective and gentle reframing — acknowledge the struggle while showing a path forward.
 - Bridge: The breakthrough moment — a shift in perspective, a moment of clarity, strength, or acceptance.
 Keep lyrics authentic and poetic — never preachy, clinical, or generic.
-
+{therapy_lyric_guidance}
 Return ONLY the lyrics with [Verse 1], [Chorus], [Verse 2], [Bridge] section markers. No other text."""
 
     else:
@@ -241,7 +254,7 @@ The lyrics should:
 - Chorus: the emotional core, catchy and memorable
 - Verse 2: deepen the story, add new perspective
 - Bridge: emotional pivot or revelation
-
+{therapy_lyric_guidance}
 Narrative/Story:
 {context.narrative}
 

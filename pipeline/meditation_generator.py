@@ -106,6 +106,44 @@ Return ONLY valid JSON."""
     }
 
 
+def generate_narration(segments: list, session_label: str = "meditation"):
+    """Generate spoken narration for meditation segments using ElevenLabs TTS.
+
+    Concatenates all segment texts with pauses and generates a single audio file.
+
+    Returns:
+        str: path to the generated MP3 file
+    """
+    os.makedirs("output", exist_ok=True)
+    eleven_client = _get_eleven_client()
+
+    # Build full narration text with pause markers
+    # Add "..." between segments to create natural pauses in speech
+    full_text = ""
+    for i, seg in enumerate(segments):
+        full_text += seg["text"] + "\n"
+        pause = seg.get("pause_seconds", 5)
+        # Add ellipsis and newlines to create pauses in TTS
+        full_text += "... " * min(pause, 6) + "\n\n"
+
+    # Rachel voice — calm, warm, suitable for meditation
+    VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
+
+    audio = eleven_client.text_to_speech.convert(
+        voice_id=VOICE_ID,
+        text=full_text,
+        model_id="eleven_multilingual_v2",
+    )
+
+    output_path = f"output/meditation_{session_label}.mp3"
+    with open(output_path, "wb") as f:
+        for chunk in audio:
+            f.write(chunk)
+
+    print(f"  Meditation narration saved: {output_path}")
+    return output_path
+
+
 def generate_ambient_music(duration_seconds: int = 120, session_label: str = "meditation"):
     """Generate ambient meditation music via ElevenLabs Music API.
 

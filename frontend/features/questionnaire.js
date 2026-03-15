@@ -2,19 +2,77 @@
 // Mental Health Questionnaire (Pre/Post Session)
 // ============================================
 
-const QUESTIONNAIRE_QUESTIONS = [
-    "How connected do you feel to your emotions today?",
-    "How much creative energy do you feel right now?",
-    "How at ease does your mind feel?",
-    "How open are you to exploring your feelings through music?",
-    "How present and grounded do you feel in this moment?",
-    "How much hope or optimism are you experiencing?",
-    "How comfortable do you feel expressing yourself?",
-    "How calm does your body feel right now?",
-    "How ready do you feel to let music guide your emotions?"
+// --- PRE-SESSION: mental health assessment ---
+const PRE_QUESTIONS = [
+    {
+        id: 'emotional_state',
+        text: 'How are you feeling right now?',
+        type: 'single',
+        options: [
+            { label: 'Anxious or overwhelmed', value: 'anxious' },
+            { label: 'Sad or low', value: 'sad' },
+            { label: 'Angry or frustrated', value: 'angry' },
+            { label: 'Numb or disconnected', value: 'numb' },
+            { label: 'Okay but could be better', value: 'neutral' },
+            { label: 'Hopeful', value: 'hopeful' },
+        ]
+    },
+    {
+        id: 'concern',
+        text: "What's weighing on you most?",
+        type: 'single',
+        options: [
+            { label: 'Stress from work or school', value: 'stress' },
+            { label: 'Relationship difficulties', value: 'relationships' },
+            { label: 'Loneliness or isolation', value: 'loneliness' },
+            { label: 'Self-doubt or low confidence', value: 'self_doubt' },
+            { label: 'Grief or loss', value: 'grief' },
+            { label: 'General unease, hard to pinpoint', value: 'general' },
+            { label: 'Nothing specific, just exploring', value: 'none' },
+        ]
+    },
+    {
+        id: 'therapeutic_goal',
+        text: 'What do you need from this session?',
+        type: 'single',
+        options: [
+            { label: 'Comfort and reassurance', value: 'comfort' },
+            { label: 'Motivation and energy', value: 'motivation' },
+            { label: 'Distraction — take my mind off things', value: 'distraction' },
+            { label: 'To feel understood and seen', value: 'validation' },
+            { label: 'Release — let it all out', value: 'release' },
+            { label: 'Calm and relaxation', value: 'calm' },
+        ]
+    },
+    {
+        id: 'intensity',
+        text: 'How intense should the experience be?',
+        type: 'single',
+        options: [
+            { label: 'Gentle — keep it soft and light', value: 'gentle' },
+            { label: 'Moderate — I can handle some depth', value: 'moderate' },
+            { label: 'Deep — I want to really feel it', value: 'deep' },
+        ]
+    }
 ];
 
-const SCORE_LABELS = ["Not at all", "A little", "Moderately", "Very much"];
+// --- POST-SESSION: reflection ---
+const POST_QUESTIONS = [
+    "How connected do you feel to your emotions now?",
+    "How much relief or release do you feel?",
+    "How at ease does your mind feel?",
+    "How hopeful do you feel about your situation?",
+    "How present and grounded do you feel?",
+    "Did the music match what you needed?",
+    "How comfortable did you feel expressing yourself?",
+    "How calm does your body feel?",
+    "Would you use this experience again?",
+];
+
+const POST_SCORE_LABELS = ["Not at all", "A little", "Moderately", "Very much"];
+
+// Therapy profile — collected from quiz + chat + user story
+let therapyProfile = null;
 
 const questionnaire = {
     preAnswers: null,
@@ -25,12 +83,36 @@ const questionnaire = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        container.innerHTML = QUESTIONNAIRE_QUESTIONS.map((q, i) => `
+        if (containerId === 'postQuestions') {
+            this.renderPostQuestions(container);
+            return;
+        }
+
+        // Render pre-session mental health questions
+        container.innerHTML = PRE_QUESTIONS.map(q => `
+            <div class="q-item">
+                <p class="q-text">${q.text}</p>
+                <div class="q-options q-options-vertical">
+                    ${q.options.map(opt => `
+                        <button class="q-option q-option-wide"
+                                data-question="${q.id}" data-value="${opt.value}"
+                                onclick="questionnaire.selectOption(this, '${containerId}')">
+                            <span class="q-score-dot"></span>
+                            <span class="q-label">${opt.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    },
+
+    renderPostQuestions(container) {
+        container.innerHTML = POST_QUESTIONS.map((q, i) => `
             <div class="q-item">
                 <p class="q-text">${q}</p>
                 <div class="q-options">
-                    ${SCORE_LABELS.map((label, score) => `
-                        <button class="q-option" data-question="${i}" data-score="${score}" onclick="questionnaire.selectOption(this, '${containerId}')">
+                    ${POST_SCORE_LABELS.map((label, score) => `
+                        <button class="q-option" data-question="${i}" data-score="${score}" onclick="questionnaire.selectOption(this, 'postQuestions')">
                             <span class="q-score-dot"></span>
                             <span class="q-label">${label}</span>
                         </button>
@@ -41,26 +123,87 @@ const questionnaire = {
     },
 
     selectOption(btn, containerId) {
-        const questionIdx = btn.dataset.question;
+        const questionKey = btn.dataset.question || btn.dataset.value;
         const container = document.getElementById(containerId);
         // Deselect other options for this question
-        container.querySelectorAll(`[data-question="${questionIdx}"]`).forEach(b => b.classList.remove('selected'));
+        const questionId = btn.dataset.question;
+        container.querySelectorAll(`[data-question="${questionId}"]`).forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
     },
 
-    collectAnswers(containerId) {
-        const container = document.getElementById(containerId);
+    collectPreAnswers() {
+        const answers = {};
+        for (const q of PRE_QUESTIONS) {
+            const selected = document.querySelector(`#preQuestions [data-question="${q.id}"].selected`);
+            if (!selected) return null;
+            answers[q.id] = selected.dataset.value;
+        }
+        return answers;
+    },
+
+    collectPostAnswers() {
         const answers = [];
-        for (let i = 0; i < QUESTIONNAIRE_QUESTIONS.length; i++) {
-            const selected = container.querySelector(`[data-question="${i}"].selected`);
-            if (!selected) return null; // Not all answered
+        for (let i = 0; i < POST_QUESTIONS.length; i++) {
+            const selected = document.querySelector(`#postQuestions [data-question="${i}"].selected`);
+            if (!selected) return null;
             answers.push(parseInt(selected.dataset.score));
         }
         return answers;
     },
 
+    buildTherapyProfile(answers) {
+        // Map quiz answers to music generation parameters
+        const profile = {
+            emotional_state: answers.emotional_state,
+            concern: answers.concern,
+            therapeutic_goal: answers.therapeutic_goal,
+            intensity: answers.intensity,
+        };
+
+        // Derive musical guidance from therapeutic goal
+        const goalGuidance = {
+            comfort: {
+                mood_hint: 'warm, tender, reassuring',
+                lyric_direction: 'lyrics should be comforting and hopeful, like a warm embrace — tell the listener they are not alone and things will be okay',
+                energy_hint: 'low to moderate',
+            },
+            motivation: {
+                mood_hint: 'uplifting, empowering, energetic',
+                lyric_direction: 'lyrics should be motivational and empowering — encourage strength, resilience, and forward momentum',
+                energy_hint: 'moderate to high',
+            },
+            distraction: {
+                mood_hint: 'fun, playful, light-hearted',
+                lyric_direction: 'lyrics should NOT directly address the listener\'s problems — instead paint vivid, imaginative, escapist imagery that transports them somewhere beautiful or exciting',
+                energy_hint: 'moderate',
+            },
+            validation: {
+                mood_hint: 'empathetic, soulful, intimate',
+                lyric_direction: 'lyrics should validate the listener\'s feelings — acknowledge their pain or struggle without trying to fix it, make them feel truly seen and heard',
+                energy_hint: 'low to moderate',
+            },
+            release: {
+                mood_hint: 'raw, emotional, cathartic',
+                lyric_direction: 'lyrics should channel intense emotion — give permission to feel everything deeply, building toward a cathartic release',
+                energy_hint: 'moderate to high',
+            },
+            calm: {
+                mood_hint: 'peaceful, serene, meditative',
+                lyric_direction: 'lyrics should guide the listener toward stillness and peace — use gentle imagery of nature, breath, and quiet moments',
+                energy_hint: 'very low',
+            },
+        };
+
+        const guidance = goalGuidance[answers.therapeutic_goal] || goalGuidance.comfort;
+        profile.mood_hint = guidance.mood_hint;
+        profile.lyric_direction = guidance.lyric_direction;
+        profile.energy_hint = guidance.energy_hint;
+
+        return profile;
+    },
+
     async submitPre() {
-        const answers = this.collectAnswers('preQuestions');
+        const answers = this.collectPreAnswers();
         if (!answers) {
             const warning = document.getElementById('preWarning');
             if (warning) {
@@ -72,12 +215,13 @@ const questionnaire = {
 
         this.preAnswers = answers;
         this.sessionId = 'session_' + Date.now();
-
-        // Store in localStorage for later reference
         localStorage.setItem('current_session_id', this.sessionId);
-
-        // Mark pre-questionnaire as done for this session
         sessionStorage.setItem('questionnaire_pre_done', 'true');
+
+        // Build therapy profile from answers
+        therapyProfile = this.buildTherapyProfile(answers);
+        // Store it so other modules can access it
+        sessionStorage.setItem('therapy_profile', JSON.stringify(therapyProfile));
 
         // Send to backend
         try {
@@ -88,18 +232,26 @@ const questionnaire = {
                     user_id: getUserId(),
                     session_id: this.sessionId,
                     phase: 'pre',
-                    answers: answers
+                    answers: Object.values(answers),
+                    therapy_profile: therapyProfile
                 })
             });
         } catch (e) {
             console.warn('Failed to save pre-questionnaire:', e);
         }
 
-        showScreen('inputScreen');
+        // Route based on selected mode
+        const mode = sessionStorage.getItem('hearmeout_mode') || 'music';
+        if (mode === 'meditation') {
+            showScreen('meditationScreen');
+            startStandaloneMeditation(therapyProfile);
+        } else {
+            showScreen('inputScreen');
+        }
     },
 
     async submitPost() {
-        const answers = this.collectAnswers('postQuestions');
+        const answers = this.collectPostAnswers();
         if (!answers) {
             const warning = document.getElementById('postWarning');
             if (warning) {
@@ -112,12 +264,10 @@ const questionnaire = {
         this.postAnswers = answers;
         const sessionId = this.sessionId || localStorage.getItem('current_session_id') || 'default';
 
-        // Ensure emotion data is persisted before fetching recap
         if (typeof saveEmotionData === 'function') saveEmotionData();
 
         showScreen('questionnaireResultScreen');
 
-        // Show loading state while we save + fetch recap
         const el = document.getElementById('questionnaireResult');
         if (el) {
             el.innerHTML = `
@@ -130,7 +280,6 @@ const questionnaire = {
             `;
         }
 
-        // Send post-questionnaire
         try {
             await fetch('/api/questionnaire', {
                 method: 'POST',
@@ -146,7 +295,6 @@ const questionnaire = {
             console.warn('Failed to save post-questionnaire:', e);
         }
 
-        // Fetch therapeutic recap
         try {
             const recapResp = await fetch('/api/session-recap', {
                 method: 'POST',
@@ -179,7 +327,6 @@ const questionnaire = {
             html += `<div class="recap-section"><span class="recap-section-icon">&#127911;</span><p>${this.escapeHtml(recap.emotion_insight)}</p></div>`;
         }
 
-        // Emotion arc visualization placeholder
         html += `<div id="emotionArcContainer"></div>`;
 
         if (recap.pre_score !== null && recap.pre_score !== undefined) {
@@ -202,7 +349,24 @@ const questionnaire = {
 
         html += `
             <div class="recap-actions">
-                <button class="q-submit-btn" onclick="showScreen('inputScreen')">
+                <div class="recap-refine-section">
+                    <button class="iterate-toggle glass" onclick="toggleRecapRefinePanel()">
+                        <span class="iterate-icon">&#10227;</span> Refine My Song
+                    </button>
+                    <div id="recapIteratePanel" class="iterate-panel" style="display:none">
+                        <div class="iterate-controls">
+                            <div class="iterate-row">
+                                <label>How should it change?</label>
+                                <textarea id="recapIterNotes" class="iterate-notes" placeholder="e.g. make it warmer, more upbeat, slower, add more hope..."></textarea>
+                            </div>
+                        </div>
+                        <button class="iterate-btn" onclick="iterateFromRecap()">
+                            <span class="btn-text">Regenerate Song</span>
+                            <span class="btn-icon">&#10227;</span>
+                        </button>
+                    </div>
+                </div>
+                <button class="q-submit-btn" onclick="showScreen('modeSelectScreen')">
                     <span class="btn-text">New Session</span>
                     <span class="btn-icon">&rarr;</span>
                 </button>
@@ -214,7 +378,6 @@ const questionnaire = {
         html += `</div>`;
         el.innerHTML = html;
 
-        // Render emotion arc visualization
         if (typeof emotionArc !== 'undefined') {
             const arcContainer = document.getElementById('emotionArcContainer');
             if (arcContainer) {
@@ -240,7 +403,7 @@ const questionnaire = {
             <div class="q-result-card glass">
                 <div class="q-result-icon">&#9835;</div>
                 <p class="q-result-text">Thank you for sharing how you feel. Your reflections help personalize your experience.</p>
-                <button class="q-result-btn" onclick="showScreen('inputScreen')">
+                <button class="q-result-btn" onclick="showScreen('modeSelectScreen')">
                     <span class="btn-text">Continue</span>
                 </button>
             </div>
@@ -254,6 +417,12 @@ const questionnaire = {
         return div.innerHTML;
     }
 };
+
+// --- Mode Selection ---
+function selectMode(mode) {
+    sessionStorage.setItem('hearmeout_mode', mode);
+    showScreen('questionnairePreScreen');
+}
 
 // Helper to get or create user ID
 function getUserId() {

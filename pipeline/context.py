@@ -51,6 +51,7 @@ class PipelineContext:
         self.pdf_file = None
         self.word_alignment = None
         self.composition_sections = None
+        self.therapy_profile = None
         self.iteration = 0
         self.history = []
 
@@ -72,6 +73,7 @@ class PipelineContext:
             "lyrics": self.lyrics,
             "audio_file": self.audio_file,
             "emotional_profile": self.emotional_profile,
+            "therapy_profile": self.therapy_profile,
         }
 
     def save_to_history(self):
@@ -88,6 +90,8 @@ class PipelineContext:
         parts = [f"Original request: {self.original_input}"]
         if self.emotional_profile:
             parts.append(f"Emotional profile: {json.dumps(self.emotional_profile)}")
+        if self.therapy_profile:
+            parts.append(f"Therapy profile: {json.dumps(self.therapy_profile)}")
         if self.narrative:
             parts.append(f"Current narrative:\n{self.narrative}")
         parts.append(f"Current musical features:\n{self.musical_features.to_json()}")
