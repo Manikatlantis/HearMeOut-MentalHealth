@@ -16,6 +16,10 @@ const faceEmotionPanel = {
     currentConfidence: 0,
     targetConfidence: 0,
     morphProgress: 1, // 0 = at current, 1 = reached target
+    currentExpressions: null,
+
+    // Smooth color lerp state
+    currentColor: { r: 107, g: 114, b: 128 }, // neutral
 
     // Morph parameters for avatar (normalized offsets)
     MORPH_STATES: {
@@ -39,6 +43,16 @@ const faceEmotionPanel = {
         surprised: '#f472b6',
         disgusted: '#fb7185',
         neutral:   '#6b7280'
+    },
+
+    EMOTION_RGB: {
+        happy:     { r: 251, g: 191, b: 36 },
+        sad:       { r: 45,  g: 212, b: 191 },
+        angry:     { r: 251, g: 113, b: 133 },
+        fearful:   { r: 167, g: 139, b: 250 },
+        surprised: { r: 244, g: 114, b: 182 },
+        disgusted: { r: 251, g: 113, b: 133 },
+        neutral:   { r: 107, g: 114, b: 128 }
     },
 
     init() {
@@ -81,15 +95,20 @@ const faceEmotionPanel = {
         this.currentEmotion = 'neutral';
         this.targetEmotion = 'neutral';
         this.morphProgress = 1;
+        this.currentExpressions = null;
+        this.currentColor = { r: 107, g: 114, b: 128 };
     },
 
-    setEmotion(emotion, confidence) {
+    setEmotion(emotion, confidence, expressions) {
         if (emotion !== this.targetEmotion) {
             this.targetEmotion = emotion;
             this.targetConfidence = confidence;
             this.morphProgress = 0;
         } else {
             this.targetConfidence = confidence;
+        }
+        if (expressions) {
+            this.currentExpressions = { ...expressions };
         }
     },
 
@@ -115,11 +134,19 @@ const faceEmotionPanel = {
         // Interpolate confidence
         this.currentConfidence += (this.targetConfidence - this.currentConfidence) * speed;
 
+        // Smooth color lerp toward target emotion color
+        const targetRGB = this.EMOTION_RGB[this.targetEmotion] || this.EMOTION_RGB.neutral;
+        const colorSpeed = 0.04;
+        this.currentColor.r += (targetRGB.r - this.currentColor.r) * colorSpeed;
+        this.currentColor.g += (targetRGB.g - this.currentColor.g) * colorSpeed;
+        this.currentColor.b += (targetRGB.b - this.currentColor.b) * colorSpeed;
+
         // Update label
         if (this.labelEl) {
             const name = this.targetEmotion.charAt(0).toUpperCase() + this.targetEmotion.slice(1);
             this.labelEl.textContent = `${name} (${Math.round(this.targetConfidence * 100)}%)`;
-            this.labelEl.style.color = this.EMOTION_COLORS[this.targetEmotion] || this.EMOTION_COLORS.neutral;
+            const c = this.currentColor;
+            this.labelEl.style.color = `rgb(${Math.round(c.r)}, ${Math.round(c.g)}, ${Math.round(c.b)})`;
         }
     },
 
@@ -130,7 +157,8 @@ const faceEmotionPanel = {
         const h = this.canvas.height;
         const cx = w / 2;
         const cy = h / 2;
-        const color = this.EMOTION_COLORS[this.targetEmotion] || this.EMOTION_COLORS.neutral;
+        const c = this.currentColor;
+        const color = `rgb(${Math.round(c.r)}, ${Math.round(c.g)}, ${Math.round(c.b)})`;
 
         ctx.clearRect(0, 0, w, h);
 

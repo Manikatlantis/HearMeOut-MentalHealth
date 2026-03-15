@@ -348,13 +348,17 @@ function animate() {
     const energy = getAudioEnergy();
     const bass = getBassEnergy();
 
-    // Camera follows mouse (or hand position if tracking)
+    // Camera target: hand > head pose > mouse (priority order)
     let camTargetX = mouseX;
     let camTargetY = mouseY;
     const handPos = (typeof getHandPositionForThreeJS === 'function') ? getHandPositionForThreeJS() : null;
     if (handPos) {
         camTargetX = handPos.x;
         camTargetY = handPos.y;
+    } else if (typeof faceGeometry !== 'undefined' && faceGeometry.headPose) {
+        // Head pose as camera fallback when no hand is tracking
+        camTargetX = faceGeometry.headPose.yaw * 0.6;
+        camTargetY = faceGeometry.headPose.pitch * -0.4;
     }
     camera.position.x += (camTargetX * 100 - camera.position.x) * 0.02;
     camera.position.y += (-camTargetY * 60 - camera.position.y) * 0.02;
@@ -364,6 +368,7 @@ function animate() {
     if (particles) {
         const positions = particles.geometry.attributes.position.array;
         const velocities = particles.geometry.userData.velocities;
+        const colors = particles.geometry.attributes.color.array;
         const count = positions.length / 3;
 
         for (let i = 0; i < count; i++) {
@@ -399,6 +404,21 @@ function animate() {
         particles.rotation.y += 0.0005 + energy * 0.002;
         particles.rotation.x += 0.0002;
 
+        // --- Emotion-driven particle tinting ---
+        // Tint ~10% of particles per frame toward face emotion color
+        if (typeof faceGeometry !== 'undefined' && faceGeometry.currentLandmarks) {
+            const emotionColor = faceGeometry.getCurrentColor();
+            const tintCount = Math.floor(count * 0.1);
+            const offset = Math.floor(Math.random() * (count - tintCount));
+            for (let i = offset; i < offset + tintCount; i++) {
+                const i3 = i * 3;
+                colors[i3] += (emotionColor.r - colors[i3]) * 0.02;
+                colors[i3 + 1] += (emotionColor.g - colors[i3 + 1]) * 0.02;
+                colors[i3 + 2] += (emotionColor.b - colors[i3 + 2]) * 0.02;
+            }
+            particles.geometry.attributes.color.needsUpdate = true;
+        }
+
         // Hand-driven particle attraction (magnetic effect)
         if (handPos) {
             const hx = handPos.x * 400;
@@ -422,7 +442,6 @@ function animate() {
             // Filter active → shift to cooler colors
             if (fxValues.filterFreq < 15000) {
                 const filterIntensity = 1 - fxValues.filterFreq / 20000;
-                const colors = particles.geometry.attributes.color.array;
                 for (let i = 0; i < Math.min(100, count); i++) {
                     const i3 = i * 3;
                     colors[i3] *= (1 - filterIntensity * 0.3);
