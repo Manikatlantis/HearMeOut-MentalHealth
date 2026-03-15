@@ -46,8 +46,89 @@ function initBackground() {
     animate();
 }
 
-function createParticles() {
-    const count = 3000;
+function createNoteTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, 128, 128);
+
+    // Draw a music note (♪) shape with glow
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+
+    // Note head — filled ellipse at bottom-left
+    ctx.beginPath();
+    ctx.ellipse(42, 92, 16, 12, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stem — vertical line going up from the right side of the head
+    ctx.beginPath();
+    ctx.moveTo(56, 88);
+    ctx.lineTo(56, 24);
+    ctx.stroke();
+
+    // Flag — curved line from top of stem
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(56, 24);
+    ctx.bezierCurveTo(80, 30, 82, 52, 62, 62);
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+function createBeamedNoteTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, 128, 128);
+
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+
+    // Two note heads
+    ctx.beginPath();
+    ctx.ellipse(30, 96, 14, 10, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(82, 88, 14, 10, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Two stems
+    ctx.beginPath();
+    ctx.moveTo(42, 92);
+    ctx.lineTo(42, 28);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(94, 84);
+    ctx.lineTo(94, 20);
+    ctx.stroke();
+
+    // Beam connecting tops
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(42, 28);
+    ctx.lineTo(94, 20);
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+function createParticleSystem(count, texture, size) {
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const velocities = new Float32Array(count * 3);
@@ -67,7 +148,6 @@ function createParticles() {
         velocities[i3 + 1] = (Math.random() - 0.5) * 0.3;
         velocities[i3 + 2] = (Math.random() - 0.5) * 0.3;
 
-        // Assign random palette color per particle
         const col = PALETTE_ARR[Math.floor(Math.random() * PALETTE_ARR.length)];
         colors[i3] = col.r;
         colors[i3 + 1] = col.g;
@@ -79,17 +159,33 @@ function createParticles() {
     geometry.userData.velocities = velocities;
 
     const material = new THREE.PointsMaterial({
-        size: 2.5,
+        size: size,
         sizeAttenuation: true,
         vertexColors: true,
         transparent: true,
         opacity: 0.6,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
+        map: texture,
+        alphaTest: 0.01,
     });
 
-    particles = new THREE.Points(geometry, material);
+    return new THREE.Points(geometry, material);
+}
+
+let particles2; // second note system
+
+function createParticles() {
+    const noteTex = createNoteTexture();
+    const beamTex = createBeamedNoteTexture();
+
+    // Single notes — majority
+    particles = createParticleSystem(575, noteTex, 18);
     scene.add(particles);
+
+    // Beamed double notes — fewer, slightly larger
+    particles2 = createParticleSystem(385, beamTex, 22);
+    scene.add(particles2);
 }
 
 function createNebula() {
@@ -364,11 +460,12 @@ function animate() {
     camera.position.y += (-camTargetY * 60 - camera.position.y) * 0.02;
     camera.lookAt(scene.position);
 
-    // Animate particles
-    if (particles) {
-        const positions = particles.geometry.attributes.position.array;
-        const velocities = particles.geometry.userData.velocities;
-        const colors = particles.geometry.attributes.color.array;
+    // Helper to animate a particle system
+    function animateParticleSystem(ps, baseSize, rotYSpeed) {
+        if (!ps) return;
+        const positions = ps.geometry.attributes.position.array;
+        const velocities = ps.geometry.userData.velocities;
+        const colors = ps.geometry.attributes.color.array;
         const count = positions.length / 3;
 
         for (let i = 0; i < count; i++) {
@@ -394,18 +491,15 @@ function animate() {
             if (Math.abs(positions[i3 + 1]) > bound) positions[i3 + 1] *= -0.5;
             if (Math.abs(positions[i3 + 2]) > bound) positions[i3 + 2] *= -0.5;
         }
-        particles.geometry.attributes.position.needsUpdate = true;
+        ps.geometry.attributes.position.needsUpdate = true;
 
-        // Multi-color cycling based on energy + time
-        const hue = (time * 0.02 + energy * 0.3) % 1;
-        particles.material.opacity = 0.4 + energy * 0.5;
-        particles.material.size = 2.5 + energy * 5;
+        ps.material.opacity = 0.4 + energy * 0.5;
+        ps.material.size = baseSize + energy * 8;
 
-        particles.rotation.y += 0.0005 + energy * 0.002;
-        particles.rotation.x += 0.0002;
+        ps.rotation.y += rotYSpeed + energy * 0.002;
+        ps.rotation.x += 0.0002;
 
-        // --- Emotion-driven particle tinting ---
-        // Tint ~10% of particles per frame toward face emotion color
+        // Emotion-driven particle tinting
         if (typeof faceGeometry !== 'undefined' && faceGeometry.currentLandmarks) {
             const emotionColor = faceGeometry.getCurrentColor();
             const tintCount = Math.floor(count * 0.1);
@@ -416,10 +510,10 @@ function animate() {
                 colors[i3 + 1] += (emotionColor.g - colors[i3 + 1]) * 0.02;
                 colors[i3 + 2] += (emotionColor.b - colors[i3 + 2]) * 0.02;
             }
-            particles.geometry.attributes.color.needsUpdate = true;
+            ps.geometry.attributes.color.needsUpdate = true;
         }
 
-        // Hand-driven particle attraction (magnetic effect)
+        // Hand-driven particle attraction
         if (handPos) {
             const hx = handPos.x * 400;
             const hy = handPos.y * 300;
@@ -439,7 +533,6 @@ function animate() {
         // Effect-driven visual modifications
         const fxValues = (typeof getEffectValues === 'function') ? getEffectValues() : null;
         if (fxValues) {
-            // Filter active → shift to cooler colors
             if (fxValues.filterFreq < 15000) {
                 const filterIntensity = 1 - fxValues.filterFreq / 20000;
                 for (let i = 0; i < Math.min(100, count); i++) {
@@ -447,9 +540,8 @@ function animate() {
                     colors[i3] *= (1 - filterIntensity * 0.3);
                     colors[i3 + 2] = Math.min(1, colors[i3 + 2] + filterIntensity * 0.02);
                 }
-                particles.geometry.attributes.color.needsUpdate = true;
+                ps.geometry.attributes.color.needsUpdate = true;
             }
-            // Distortion → chaotic velocities
             if (fxValues.distortionAmount > 5) {
                 const chaos = fxValues.distortionAmount / 100;
                 for (let i = 0; i < count; i++) {
@@ -460,6 +552,10 @@ function animate() {
             }
         }
     }
+
+    // Animate both note particle systems
+    animateParticleSystem(particles, 18, 0.0005);
+    animateParticleSystem(particles2, 22, -0.0003);
 
     // Spawn musical notes during lyrics playback
     noteSpawnTimer++;

@@ -35,8 +35,22 @@ function showScreen(id) {
     // Scroll to top when switching screens
     window.scrollTo(0, 0);
 
-    // Lock body scroll — all screens are fixed viewport overlays
-    document.body.style.overflow = 'hidden';
+    // Lock body scroll on fixed overlays, but allow scroll on landing page
+    document.body.style.overflow = (id === 'landingScreen') ? 'auto' : 'hidden';
+
+    // Animate stat counters on landing page
+    if (id === 'landingScreen') {
+        document.querySelectorAll('.land-stat-num[data-target]').forEach(el => {
+            const target = parseInt(el.dataset.target);
+            let current = 0;
+            const step = Math.max(1, Math.floor(target / 40));
+            const interval = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(interval); }
+                el.textContent = current;
+            }, 30);
+        });
+    }
 
     // Render questionnaire questions when screens are shown
     if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
@@ -530,7 +544,9 @@ function reset() {
         questionnaire.postAnswers = null;
     }
 
-    showScreen('modeSelectScreen');
+    // Remove mood theme when starting fresh
+    document.body.className = '';
+    showScreen('landingScreen');
 }
 
 // ---- Iterate Panel ----

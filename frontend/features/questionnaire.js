@@ -223,6 +223,9 @@ const questionnaire = {
         // Store it so other modules can access it
         sessionStorage.setItem('therapy_profile', JSON.stringify(therapyProfile));
 
+        // Apply mood-adaptive color theme
+        this.applyMoodTheme(answers.emotional_state);
+
         // Send to backend
         try {
             await fetch('/api/questionnaire', {
@@ -343,6 +346,24 @@ const questionnaire = {
             html += `<p class="recap-insight">${this.escapeHtml(recap.score_insight)}</p>`;
         }
 
+        if (recap.recommended_exercise) {
+            const ex = recap.recommended_exercise;
+            html += `
+                <div class="recap-exercise">
+                    <div class="recap-exercise-header">
+                        <span class="recap-exercise-icon">&#129526;</span>
+                        <strong>Try This Now</strong>
+                    </div>
+                    <h4 class="recap-exercise-name">${this.escapeHtml(ex.name || '')}</h4>
+                    <p class="recap-exercise-desc">${this.escapeHtml(ex.description || '')}</p>
+                    <div class="recap-exercise-steps">
+                        ${(ex.steps || []).map((s, i) => `<div class="recap-exercise-step"><span class="step-num">${i + 1}</span><span>${this.escapeHtml(s)}</span></div>`).join('')}
+                    </div>
+                    <p class="recap-exercise-duration">${this.escapeHtml(ex.duration || '')}</p>
+                </div>
+            `;
+        }
+
         if (recap.next_step) {
             html += `<div class="recap-next"><strong>Next time:</strong> ${this.escapeHtml(recap.next_step)}</div>`;
         }
@@ -366,7 +387,7 @@ const questionnaire = {
                         </button>
                     </div>
                 </div>
-                <button class="q-submit-btn" onclick="showScreen('modeSelectScreen')">
+                <button class="q-submit-btn" onclick="showScreen('landingScreen')">
                     <span class="btn-text">New Session</span>
                     <span class="btn-icon">&rarr;</span>
                 </button>
@@ -403,11 +424,26 @@ const questionnaire = {
             <div class="q-result-card glass">
                 <div class="q-result-icon">&#9835;</div>
                 <p class="q-result-text">Thank you for sharing how you feel. Your reflections help personalize your experience.</p>
-                <button class="q-result-btn" onclick="showScreen('modeSelectScreen')">
+                <button class="q-result-btn" onclick="showScreen('landingScreen')">
                     <span class="btn-text">Continue</span>
                 </button>
             </div>
         `;
+    },
+
+    applyMoodTheme(emotionalState) {
+        // Remove any existing mood class
+        document.body.classList.remove('mood-anxious', 'mood-sad', 'mood-angry', 'mood-numb', 'mood-neutral', 'mood-hopeful');
+        const moodMap = {
+            anxious: 'mood-anxious',
+            sad: 'mood-sad',
+            angry: 'mood-angry',
+            numb: 'mood-numb',
+            neutral: 'mood-neutral',
+            hopeful: 'mood-hopeful',
+        };
+        const cls = moodMap[emotionalState];
+        if (cls) document.body.classList.add(cls);
     },
 
     escapeHtml(text) {

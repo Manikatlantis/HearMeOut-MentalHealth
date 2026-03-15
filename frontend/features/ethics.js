@@ -18,7 +18,7 @@ const ethics = {
             if (!sessionStorage.getItem('questionnaire_pre_done')) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 if (typeof showScreen === 'function') {
-                    showScreen('modeSelectScreen');
+                    showScreen('landingScreen');
                 }
             }
         }
@@ -43,9 +43,9 @@ const ethics = {
 
         this.applyCvOptOut();
 
-        // Show mode selection after ethics acceptance
+        // Show landing page after ethics acceptance
         if (typeof showScreen === 'function') {
-            showScreen('modeSelectScreen');
+            showScreen('landingScreen');
         }
     },
 

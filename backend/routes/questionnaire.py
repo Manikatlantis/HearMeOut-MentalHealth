@@ -111,6 +111,12 @@ def session_recap(req: SessionRecapRequest):
         '- "emotion_insight": 1-2 sentences about their emotional response during playback (ONLY if emotion data is provided, otherwise set to null)\n'
         '- "score_insight": 1-2 sentences interpreting their wellness score change (ONLY if score data is provided, otherwise set to null)\n'
         '- "next_step": One encouraging suggestion for their next session\n'
+        '- "recommended_exercise": A personalized therapeutic exercise object with fields: '
+        '"name" (short title), "description" (1 sentence why this helps), '
+        '"steps" (array of 3-4 simple instruction strings), "duration" (e.g. "2-3 minutes"). '
+        "Choose from evidence-based techniques: grounding (5-4-3-2-1 senses), box breathing, "
+        "progressive muscle relaxation, gratitude journaling, body scan, self-compassion meditation, "
+        "or emotional labeling. Match the exercise to their emotional state and session outcome.\n"
         "Be warm but not saccharine. Be specific to their story, not generic."
     )
 

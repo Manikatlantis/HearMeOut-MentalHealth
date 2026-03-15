@@ -181,6 +181,84 @@
     <!-- MAIN APP -->
     <div id="app" class="app">
 
+        <!-- LANDING / PROMO SCREEN -->
+        <div id="landingScreen" class="screen">
+            <div class="land">
+                <!-- Aurora glow blobs -->
+                <div class="land-aurora land-aurora-1"></div>
+                <div class="land-aurora land-aurora-2"></div>
+
+                <!-- Badge -->
+                <div class="land-badge">
+                    <span class="land-badge-dot"></span>
+                    AI-Powered Music Therapy
+                </div>
+
+                <!-- Hero title -->
+                <h1 class="land-title" data-text="Hear Me Out">Hear Me Out</h1>
+
+                <!-- Animated waveform visualizer -->
+                <div class="land-wave">
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                </div>
+
+                <!-- Tagline -->
+                <p class="land-tagline">Your story deserves to be heard. Let music help you heal.</p>
+
+                <!-- Stats -->
+                <div class="land-stats">
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="25">0</span><span class="land-stat-suffix">%</span>
+                        <span class="land-stat-label">depression reduction</span>
+                    </div>
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="3">0</span><span class="land-stat-suffix">x</span>
+                        <span class="land-stat-label">more effective</span>
+                    </div>
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="89">0</span><span class="land-stat-suffix">%</span>
+                        <span class="land-stat-label">reduced anxiety</span>
+                    </div>
+                </div>
+
+                <!-- Research cards — horizontal -->
+                <div class="land-research">
+                    <div class="land-rcard land-anim-1">
+                        <div class="land-rcard-accent"></div>
+                        <p>"Music therapy reduces symptoms of depression by <strong>25%</strong> compared to standard treatment."</p>
+                        <span class="land-rcard-src">Journal of Affective Disorders <em>2017</em></span>
+                    </div>
+                    <div class="land-rcard land-anim-2">
+                        <div class="land-rcard-accent"></div>
+                        <p>"Listening to music <strong>lowers cortisol</strong> levels and significantly reduces perceived stress."</p>
+                        <span class="land-rcard-src">Trends in Cognitive Sciences <em>2013</em></span>
+                    </div>
+                    <div class="land-rcard land-anim-3">
+                        <div class="land-rcard-accent"></div>
+                        <p>"Music therapy improves <strong>self-esteem</strong> and reduces anxiety in mental health patients."</p>
+                        <span class="land-rcard-src">Nordic Journal of Music Therapy <em>2015</em></span>
+                    </div>
+                </div>
+
+                <!-- CTA -->
+                <button class="land-cta" onclick="showScreen('modeSelectScreen')">
+                    <span class="land-cta-glow"></span>
+                    <span class="land-cta-text">Begin Your Session</span>
+                    <span class="land-cta-arrow">&rarr;</span>
+                </button>
+                <p class="land-footer">No account needed &middot; 100% private &middot; Takes 2 minutes</p>
+            </div>
+        </div>
+
         <!-- MODE SELECTION SCREEN -->
         <div id="modeSelectScreen" class="screen">
             <div class="mode-card glass">
@@ -373,6 +451,10 @@
                     </button>
                 </div>
 
+                <button class="q-submit-btn" onclick="showScreen('questionnairePostScreen')" style="max-width:320px;margin:0 auto 12px;">
+                    <span class="btn-text">Continue</span>
+                    <span class="btn-icon">&rarr;</span>
+                </button>
                 <button class="new-btn glass" onclick="reset()">+ New Song</button>
             </div>
         </div>
