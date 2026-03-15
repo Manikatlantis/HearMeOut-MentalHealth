@@ -35,6 +35,14 @@ const chatbot = {
             if (resp.ok) {
                 const data = await resp.json();
                 this.history = data.messages || [];
+                // Restore lastSummary from history (scan assistant messages backwards)
+                for (let i = this.history.length - 1; i >= 0; i--) {
+                    const msg = this.history[i];
+                    if (msg.role === 'assistant' && msg.content.includes('STORY SUMMARY:')) {
+                        this.lastSummary = msg.content.split('STORY SUMMARY:')[1].trim();
+                        break;
+                    }
+                }
                 this.renderMessages();
             }
         } catch (e) {
@@ -46,8 +54,8 @@ const chatbot = {
         const container = document.getElementById('chatMessages');
         if (!container) return;
 
-        // Show "Use for song" button after 5+ exchanges (matching backend's 5-8 exchange guideline)
-        if (this.history.filter(m => m.role === 'user').length >= 5) {
+        // Show "Use for song" button after 3+ exchanges (matching backend's 3-5 exchange guideline)
+        if (this.history.filter(m => m.role === 'user').length >= 3) {
             this.showUseForSongBtn();
         }
 
@@ -153,9 +161,19 @@ const chatbot = {
         // Build story text from summary or last few messages
         let storyText = this.lastSummary;
         if (!storyText) {
-            // Use the user's messages as the story input
-            const userMessages = this.history.filter(m => m.role === 'user');
-            storyText = userMessages.map(m => m.content).join('. ');
+            // Use the last assistant message as a better fallback than raw user messages
+            const assistantMessages = this.history.filter(m => m.role === 'assistant');
+            if (assistantMessages.length > 0) {
+                let lastAssistant = assistantMessages[assistantMessages.length - 1].content;
+                // Strip EMOTIONAL PROFILE and STORY SUMMARY markers if present
+                if (lastAssistant.includes('EMOTIONAL PROFILE:')) {
+                    lastAssistant = lastAssistant.split('EMOTIONAL PROFILE:')[0].trim();
+                }
+                if (lastAssistant.includes('STORY SUMMARY:')) {
+                    lastAssistant = lastAssistant.split('STORY SUMMARY:')[0].trim();
+                }
+                storyText = lastAssistant;
+            }
         }
         if (!storyText) return;
 
