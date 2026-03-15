@@ -33,16 +33,19 @@
         <video id="cvVideo" class="cv-video" playsinline muted></video>
         <canvas id="handGeometryCanvas" class="hand-geometry-canvas"></canvas>
         <span id="emotionBadge" class="emotion-badge" style="display:none"></span>
-    </div>
 
-    <!-- EFFECT INDICATORS -->
-    <div id="effectIndicators" class="effect-indicators">
-        <div class="fx-pill" id="fx-volume"><span class="fx-label">Vol</span><span class="fx-val">1.0</span></div>
-        <div class="fx-pill" id="fx-filter"><span class="fx-label">Filter</span><span class="fx-val">20000Hz</span></div>
-        <div class="fx-pill" id="fx-distortion"><span class="fx-label">Dist</span><span class="fx-val">0</span></div>
-        <div class="fx-pill" id="fx-delay"><span class="fx-label">Delay</span><span class="fx-val">0.00s</span></div>
-        <div class="fx-pill" id="fx-reverb"><span class="fx-label">Reverb</span><span class="fx-val">0%</span></div>
-        <div class="fx-pill" id="fx-pan"><span class="fx-label">Pan</span><span class="fx-val">0.00</span></div>
+        <!-- EFFECT INDICATORS (inside webcam area) -->
+        <div id="effectIndicators" class="effect-indicators">
+            <div class="fx-pill" id="fx-volume"><span class="fx-label">Vol</span><span class="fx-val">1.0</span></div>
+            <div class="fx-pill" id="fx-filter"><span class="fx-label">Filter</span><span class="fx-val">20000Hz</span></div>
+            <div class="fx-pill" id="fx-distortion"><span class="fx-label">Dist</span><span class="fx-val">0</span></div>
+            <div class="fx-pill" id="fx-delay"><span class="fx-label">Delay</span><span class="fx-val">0.00s</span></div>
+            <div class="fx-pill" id="fx-reverb"><span class="fx-label">Reverb</span><span class="fx-val">0%</span></div>
+            <div class="fx-pill" id="fx-pan"><span class="fx-label">Pan</span><span class="fx-val">0.00</span></div>
+        </div>
+
+        <!-- GESTURE SUGGESTION -->
+        <div id="gestureSuggestion" class="gesture-suggestion"></div>
     </div>
 
     <!-- GESTURE GUIDE -->
@@ -52,8 +55,8 @@
             <button class="gesture-guide-close" onclick="toggleGestureGuide()">✕</button>
         </div>
         <div class="gesture-list">
-            <div class="gesture-item"><span class="gesture-icon">✋↑</span><span>Raise hand — Volume up</span></div>
-            <div class="gesture-item"><span class="gesture-icon">✋↓</span><span>Lower hand — Volume down</span></div>
+            <div class="gesture-item"><span class="gesture-icon">👍</span><span>Thumbs up — Volume up</span></div>
+            <div class="gesture-item"><span class="gesture-icon">👎</span><span>Thumbs down — Volume down</span></div>
             <div class="gesture-item"><span class="gesture-icon">🖐</span><span>Open palm — Best version</span></div>
             <div class="gesture-item"><span class="gesture-icon">✊</span><span>Fist — Bass heavy</span></div>
             <div class="gesture-item"><span class="gesture-icon">✌️</span><span>Peace sign — Vocal isolate</span></div>

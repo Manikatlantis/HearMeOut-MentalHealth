@@ -1008,36 +1008,61 @@ audio { display: none; }
     border: 1px solid var(--glass-border);
 }
 
-/* Effect indicator bar */
+/* Effect indicator bar — positioned inside webcam overlay */
 .effect-indicators {
-    position: fixed;
-    bottom: 20px;
+    position: absolute;
+    bottom: 8px;
     left: 50%;
-    transform: translateX(-50%) translateY(20px);
+    transform: translateX(-50%);
     display: flex;
-    gap: 8px;
-    z-index: 40;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    z-index: 10;
     opacity: 0;
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition: opacity 0.4s ease;
     pointer-events: none;
+    padding: 0 4px;
 }
 .effect-indicators.visible {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
     pointer-events: auto;
 }
 
+/* Gesture suggestion — positioned inside webcam overlay */
+.gesture-suggestion {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px 12px;
+    border-radius: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.gesture-suggestion.visible {
+    opacity: 1;
+}
+
 .fx-pill {
-    padding: 6px 12px;
-    border-radius: 20px;
-    background: var(--glass);
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.5);
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
+    gap: 4px;
+    font-size: 10px;
     color: var(--text-dim);
     transition: all 0.3s ease;
     white-space: nowrap;
@@ -1325,7 +1350,7 @@ audio { display: none; }
     .lyrics-overlay-split .webcam-dock { flex: none; width: 80%; max-width: 350px; max-height: 260px; }
     #playerScreen, #meditationScreen { max-width: 640px; }
     .meditation-webcam-dock { width: 240px; height: 240px; }
-    .effect-indicators { flex-wrap: wrap; max-width: 90vw; bottom: 140px; }
+    .effect-indicators { gap: 3px; bottom: 4px; }
     .fx-pill { padding: 4px 8px; font-size: 10px; }
     .gesture-guide { width: 90vw; }
     .history-panel { max-height: 300px; }

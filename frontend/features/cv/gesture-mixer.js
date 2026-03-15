@@ -149,10 +149,23 @@ function processGestures(results) {
 }
 
 function detectVolumeGesture(lm) {
-    const wristY = lm[0].y;
-    if (wristY < 0.3) {
+    // Thumbs up / thumbs down — thumb extended while all other fingers curled
+    const palm = lm[9];
+    const tips = [lm[8], lm[12], lm[16], lm[20]];
+    let curledCount = 0;
+    for (const tip of tips) {
+        if (distance2D(tip, palm) < 0.10) curledCount++;
+    }
+    if (curledCount < 3) return; // Need at least 3 of 4 fingers curled
+
+    // Check thumb is extended (tip far from palm)
+    const thumbDist = distance2D(lm[4], palm);
+    if (thumbDist < 0.10) return; // Thumb not extended
+
+    // Direction: thumb tip above thumb MCP = up, below = down
+    if (lm[4].y < lm[2].y - 0.04) {
         gestureMixer.activeGestures.add('volume_up');
-    } else if (wristY > 0.7) {
+    } else if (lm[4].y > lm[2].y + 0.04) {
         gestureMixer.activeGestures.add('volume_down');
     }
 }
@@ -178,7 +191,7 @@ function detectOpenPalm(lm) {
 }
 
 function detectFistGesture(lm) {
-    // All fingertips close to palm
+    // All fingertips close to palm, INCLUDING thumb
     const palm = lm[9];
     const tips = [lm[8], lm[12], lm[16], lm[20]];
     let totalDist = 0;
@@ -186,7 +199,10 @@ function detectFistGesture(lm) {
         totalDist += distance2D(tip, palm);
     }
     const avgDist = totalDist / 4;
-    if (avgDist < 0.08) {
+
+    // Also require thumb curled (not extended) to avoid conflict with thumbs up/down
+    const thumbDist = distance2D(lm[4], palm);
+    if (avgDist < 0.08 && thumbDist < 0.12) {
         gestureMixer.activeGestures.add('bass_heavy');
         gestureMixer._fistTightness = Math.min(1, 1 - (avgDist / 0.08));
     }
@@ -280,10 +296,7 @@ function applyGesturesToEffects() {
         return;
     }
 
-    // Volume
-    if (g.has('volume_up')) setVolume(1.5);
-    else if (g.has('volume_down')) setVolume(0.3);
-
+    // Mode effects first
     // Open palm (best version) — reset to clean, full-range playback
     if (g.has('open_palm')) {
         setBestVersion();
@@ -296,6 +309,10 @@ function applyGesturesToEffects() {
     else if (g.has('vocal_isolate')) {
         setVocalIsolate(true);
     }
+
+    // Volume LAST — overrides any volume set by mode effects
+    if (g.has('volume_up')) setVolume(1.5);
+    else if (g.has('volume_down')) setVolume(0.3);
 }
 
 // --- Getters for UI/Three.js ---
