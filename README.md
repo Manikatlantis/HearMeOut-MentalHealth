@@ -6,7 +6,7 @@ Mental health support shouldn't feel clinical or intimidating. **Hear Me Out** i
 
 Built for the **Mental Health (SKIPIT)** track — supporting mental well-being, accessibility to care, and early intervention through the universal language of music.
 
-> **Live Demo:** [hearmeoutai.com](https://hearmeout.ink)
+> **Live Demo:** [hearmeout.ink](https://hearmeout.ink)
 
 ---
 
