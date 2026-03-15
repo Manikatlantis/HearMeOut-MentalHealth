@@ -342,7 +342,8 @@ async function acceptEmotionRefinement() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 feedback: feedback,
-                session_id: 'default'
+                session_id: currentSessionId || (currentData ? currentData.session_id : 'default'),
+                user_id: getUserId()
             })
         });
 
