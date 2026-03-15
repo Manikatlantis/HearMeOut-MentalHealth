@@ -23,7 +23,8 @@ async function initEmotionModels() {
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/';
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+            faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
         ]);
         emotionTracker.modelsLoaded = true;
         return true;
@@ -45,11 +46,37 @@ function startEmotionTracking(videoElement) {
         try {
             const detection = await faceapi
                 .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+                .withFaceLandmarks()
                 .withFaceExpressions();
 
             if (detection) {
                 const player = document.getElementById('audioPlayer');
                 const emotions = detection.expressions;
+
+                // Extract 68 landmarks normalized to [0,1]
+                const vw = videoElement.videoWidth || videoElement.width || 640;
+                const vh = videoElement.videoHeight || videoElement.height || 480;
+                if (detection.landmarks) {
+                    const positions = detection.landmarks.positions;
+                    const normalized = positions.map(p => ({
+                        x: p.x / vw,
+                        y: p.y / vh
+                    }));
+                    let dominantForGeometry = 'neutral';
+                    let maxValForGeometry = 0;
+                    for (const [em, val] of Object.entries(emotions)) {
+                        if (val > maxValForGeometry) {
+                            maxValForGeometry = val;
+                            dominantForGeometry = em;
+                        }
+                    }
+                    if (typeof faceGeometry !== 'undefined') {
+                        faceGeometry.updateLandmarks(normalized, dominantForGeometry, maxValForGeometry);
+                    }
+                    if (typeof faceEmotionPanel !== 'undefined') {
+                        faceEmotionPanel.setEmotion(dominantForGeometry, maxValForGeometry);
+                    }
+                }
                 let dominantEmotion = 'neutral';
                 let maxVal = 0;
                 for (const [emotion, val] of Object.entries(emotions)) {

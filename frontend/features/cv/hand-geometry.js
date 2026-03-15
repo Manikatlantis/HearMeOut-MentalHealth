@@ -75,6 +75,50 @@ const handGeometry = {
         this.particles = [];
     },
 
+    // Store latest data for shared render loop
+    _latestLandmarks: null,
+    _latestGestures: null,
+
+    updateData(multiHandLandmarks, activeGestures) {
+        this._latestLandmarks = multiHandLandmarks;
+        this._latestGestures = activeGestures;
+    },
+
+    drawFrame(ctx, canvas) {
+        if (!canvas) return;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        const multiHandLandmarks = this._latestLandmarks;
+        const activeGestures = this._latestGestures;
+
+        if (!multiHandLandmarks || multiHandLandmarks.length === 0) {
+            this._updateParticles(null);
+            this._drawParticles(ctx);
+            this.prevLandmarks = [];
+            return;
+        }
+
+        const color = this._getGestureColor(activeGestures);
+
+        for (let hi = 0; hi < multiHandLandmarks.length; hi++) {
+            const raw = multiHandLandmarks[hi];
+            const lm = raw.map(p => ({
+                x: p.x * w,
+                y: p.y * h
+            }));
+
+            const smoothed = this._lerpLandmarks(hi, lm, 0.45);
+
+            this._drawBones(ctx, smoothed, color);
+            this._drawSacredGeometry(ctx, smoothed, color);
+            this._drawJoints(ctx, smoothed, color);
+            this._updateParticles(smoothed);
+        }
+
+        this._drawParticles(ctx);
+    },
+
     draw(multiHandLandmarks, activeGestures) {
         if (!this.ctx || !this.canvas) return;
         this._syncSize();

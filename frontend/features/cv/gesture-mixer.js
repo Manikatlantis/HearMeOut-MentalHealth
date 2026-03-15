@@ -35,14 +35,14 @@ function initGestureMixer(videoElement) {
         gestureMixer.lastResults = results;
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             processGestures(results);
-            if (typeof handGeometry !== 'undefined' && handGeometry.canvas) {
-                handGeometry.draw(results.multiHandLandmarks, gestureMixer.activeGestures);
+            if (typeof handGeometry !== 'undefined') {
+                handGeometry.updateData(results.multiHandLandmarks, gestureMixer.activeGestures);
             }
         } else {
             gestureMixer.handPositions = [];
             gestureMixer.activeGestures.clear();
-            if (typeof handGeometry !== 'undefined' && handGeometry.canvas) {
-                handGeometry.draw([], new Set());
+            if (typeof handGeometry !== 'undefined') {
+                handGeometry.updateData([], new Set());
             }
         }
     });
