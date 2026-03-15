@@ -1200,6 +1200,52 @@ audio { display: none; }
     line-height: 1.7;
     margin-bottom: 20px;
 }
+.refinement-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+.refinement-loading .spinner-small {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--rose);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.refinement-suggestion {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.3s ease;
+    margin-bottom: 8px;
+}
+.refinement-suggestion:focus {
+    border-color: rgba(244, 114, 182, 0.4);
+}
+.refinement-suggestion::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+.refinement-accept:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
 .refinement-actions {
     display: flex;
     flex-direction: column;

@@ -290,23 +290,51 @@ function showEmotionRefinementPrompt(analysis) {
     const modal = document.getElementById('refinementModal');
     if (!modal) return;
 
-    // Build description
-    const desc = document.getElementById('refinementDesc');
-    if (desc) {
-        const parts = [];
-        if (analysis.peakMoments.length > 0) {
-            parts.push('We noticed you were most moved during certain moments.');
-        }
-        if (analysis.engagementScore > 0.5) {
-            parts.push('Your engagement was strong throughout!');
-        } else if (analysis.engagementScore < 0.3) {
-            parts.push('Some sections could be more emotionally resonant.');
-        }
-        parts.push('Create an enhanced version based on your emotional response?');
-        desc.textContent = parts.join(' ');
-    }
+    // Reset UI state: show loading, hide textarea, disable accept button
+    const loader = document.getElementById('refinementLoading');
+    const textarea = document.getElementById('refinementSuggestion');
+    const acceptBtn = modal.querySelector('.refinement-accept');
+
+    if (loader) loader.style.display = 'flex';
+    if (textarea) { textarea.style.display = 'none'; textarea.value = ''; }
+    if (acceptBtn) acceptBtn.disabled = true;
 
     modal.classList.add('visible');
+
+    // Fire async request to get AI suggestion
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    fetch('/api/emotion-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+            session_id: currentSessionId || (currentData ? currentData.session_id : 'default'),
+            user_id: getUserId(),
+            emotion_timeline: emotionTracker.timeline,
+            analysis: analysis,
+            lyrics: (currentData && currentData.lyrics) || '',
+            narrative: (currentData && currentData.narrative) || '',
+            musical_features: (currentData && currentData.musical_features) || {}
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        clearTimeout(timeoutId);
+        const suggestion = data.suggestion || buildEmotionFeedback(analysis);
+        if (loader) loader.style.display = 'none';
+        if (textarea) { textarea.value = suggestion; textarea.style.display = 'block'; }
+        if (acceptBtn) acceptBtn.disabled = false;
+    })
+    .catch(() => {
+        clearTimeout(timeoutId);
+        // Fallback to rule-based feedback
+        const fallback = buildEmotionFeedback(analysis);
+        if (loader) loader.style.display = 'none';
+        if (textarea) { textarea.value = fallback; textarea.style.display = 'block'; }
+        if (acceptBtn) acceptBtn.disabled = false;
+    });
 }
 
 function hideEmotionRefinementPrompt() {
@@ -317,10 +345,8 @@ function hideEmotionRefinementPrompt() {
 async function acceptEmotionRefinement() {
     hideEmotionRefinementPrompt();
 
-    const analysis = emotionTracker.analysis;
-    if (!analysis) return;
-
-    const feedback = buildEmotionFeedback(analysis);
+    const textarea = document.getElementById('refinementSuggestion');
+    const feedback = textarea ? textarea.value.trim() : '';
     if (!feedback) return;
 
     // Stop playback

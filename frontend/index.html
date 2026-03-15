@@ -65,7 +65,11 @@
     <div id="refinementModal" class="refinement-modal">
         <div class="refinement-content glass">
             <h3>Emotion-Enhanced Remix</h3>
-            <p id="refinementDesc" class="refinement-desc">We analyzed your emotional response to the song.</p>
+            <div id="refinementLoading" class="refinement-loading">
+                <div class="spinner-small"></div>
+                <span>Analyzing your emotional response...</span>
+            </div>
+            <textarea id="refinementSuggestion" class="refinement-suggestion" style="display:none" rows="4" placeholder="AI suggestion will appear here..."></textarea>
             <div id="emotionHeatmap" class="emotion-heatmap" style="display:none">
                 <canvas id="heatmapCanvas" height="20"></canvas>
                 <div class="heatmap-legend">
