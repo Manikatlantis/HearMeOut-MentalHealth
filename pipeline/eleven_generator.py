@@ -70,19 +70,22 @@ def _build_composition_plan(context):
 
     # Calculate section durations for full song structure:
     # Intro → Verse 1 → Chorus → Verse 2 → Bridge → Chorus → Outro
-    total_ms = features["duration"] * 1000
+    # ElevenLabs minimum: 3000ms per section
+    MIN_SECTION_MS = 3000
+    num_sections = 7 if (verse_lines and chorus_lines) else 1
+    min_total = MIN_SECTION_MS * num_sections
+    total_ms = max(features["duration"] * 1000, min_total)
     if has_lyrics:
-        intro_ms = int(total_ms * 0.08)   # ~8% intro
-        outro_ms = int(total_ms * 0.07)   # ~7% outro
+        intro_ms = max(MIN_SECTION_MS, int(total_ms * 0.08))
+        outro_ms = max(MIN_SECTION_MS, int(total_ms * 0.07))
         remaining = total_ms - intro_ms - outro_ms
-        # Distribute remaining across vocal sections
-        verse1_ms = int(remaining * 0.22)
-        chorus1_ms = int(remaining * 0.20)
-        verse2_ms = int(remaining * 0.22)
-        bridge_ms = int(remaining * 0.16)
-        chorus2_ms = remaining - verse1_ms - chorus1_ms - verse2_ms - bridge_ms
+        verse1_ms = max(MIN_SECTION_MS, int(remaining * 0.22))
+        chorus1_ms = max(MIN_SECTION_MS, int(remaining * 0.20))
+        verse2_ms = max(MIN_SECTION_MS, int(remaining * 0.22))
+        bridge_ms = max(MIN_SECTION_MS, int(remaining * 0.16))
+        chorus2_ms = max(MIN_SECTION_MS, remaining - verse1_ms - chorus1_ms - verse2_ms - bridge_ms)
     else:
-        intro_ms = total_ms
+        intro_ms = max(MIN_SECTION_MS, total_ms)
         verse1_ms = verse2_ms = chorus1_ms = chorus2_ms = bridge_ms = outro_ms = 0
 
     # Get the full lyrics text for context

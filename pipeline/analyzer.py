@@ -30,7 +30,7 @@ Return ONLY a valid JSON object with these fields:
 - chord_progression (list of chord strings, 4-8 chords)
 - energy (float 0.0-1.0, where 0 is very calm and 1 is very intense)
 - dynamics (string: "whisper", "soft", "moderate", "loud", "explosive")
-- duration (integer, 60-120 seconds. Standard songs: 60-90s, epic/atmospheric: 90-120s)
+- duration (integer, always 15 seconds exactly)
 
 Narrative:
 {context.narrative}
@@ -53,4 +53,5 @@ Return ONLY the JSON object, no other text."""
 
     features_dict = json.loads(text)
     context.musical_features = MusicalFeatures.from_dict(features_dict)
+    context.musical_features.duration = 60  # 60s for proper vocals while saving credits
     return context

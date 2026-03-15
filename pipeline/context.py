@@ -13,7 +13,7 @@ class MusicalFeatures:
     chord_progression: list = field(default_factory=lambda: ["C", "Am", "F", "G"])
     energy: float = 0.4
     dynamics: str = "soft"
-    duration: int = 90
+    duration: int = 60
 
     def to_dict(self):
         return {
