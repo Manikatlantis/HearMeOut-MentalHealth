@@ -105,7 +105,10 @@ function processGestures(results) {
         // Detect gestures
         detectVolumeGesture(lm);
         detectPinchGesture(lm);
-        detectOpenPalmGesture(lm);
+        detectFingerSpread(lm);
+        if (!gestureMixer.activeGestures.has('finger_spread')) {
+            detectOpenPalmGesture(lm);
+        }
         detectFistGesture(lm);
     }
 
@@ -159,6 +162,34 @@ function detectOpenPalmGesture(lm) {
     }
 }
 
+function detectFingerSpread(lm) {
+    // Check hand is open first (tips far from palm)
+    const palm = lm[9];
+    const tips = [lm[4], lm[8], lm[12], lm[16], lm[20]];
+    let totalDist = 0;
+    for (const tip of tips) {
+        const dx = tip.x - palm.x;
+        const dy = tip.y - palm.y;
+        totalDist += Math.sqrt(dx * dx + dy * dy);
+    }
+    const avgDist = totalDist / 5;
+    if (avgDist <= 0.15) return;
+
+    // Check inter-fingertip spread: adjacent tips [4↔8, 8↔12, 12↔16, 16↔20]
+    const pairs = [[4,8],[8,12],[12,16],[16,20]];
+    let spreadTotal = 0;
+    for (const [a, b] of pairs) {
+        const dx = lm[a].x - lm[b].x;
+        const dy = lm[a].y - lm[b].y;
+        spreadTotal += Math.sqrt(dx * dx + dy * dy);
+    }
+    const avgSpread = spreadTotal / 4;
+    if (avgSpread > 0.09) {
+        gestureMixer.activeGestures.add('finger_spread');
+        gestureMixer._spreadIntensity = Math.min(1, (avgSpread - 0.09) / 0.06);
+    }
+}
+
 function detectFistGesture(lm) {
     // All fingertips close to palm
     const palm = lm[9];
@@ -172,6 +203,7 @@ function detectFistGesture(lm) {
     const avgDist = totalDist / 4;
     if (avgDist < 0.08) {
         gestureMixer.activeGestures.add('fist');
+        gestureMixer._fistTightness = Math.min(1, 1 - (avgDist / 0.08));
     }
 }
 
@@ -180,6 +212,7 @@ function detectStereoSpread(hand1, hand2) {
     if (dist > 0.3) {
         gestureMixer.activeGestures.add('stereo_spread');
         gestureMixer._stereoDist = dist;
+        gestureMixer._stereoMidpoint = (hand1[0].x + hand2[0].x) / 2;
     }
 }
 
@@ -225,51 +258,56 @@ function applyGesturesToEffects() {
 
     const g = gestureMixer.activeGestures;
 
-    // Open palm = reset all (highest priority)
-    if (g.has('open_palm') && !g.has('pinch') && !g.has('fist')) {
+    // Open palm reset — only if no finger_spread active
+    if (g.has('open_palm') && !g.has('pinch') && !g.has('fist') && !g.has('finger_spread')) {
         resetAllEffects();
         return;
     }
 
-    // Volume
-    if (g.has('volume_up')) {
-        setVolume(1.5);
-    } else if (g.has('volume_down')) {
-        setVolume(0.3);
-    }
+    // Volume (unchanged)
+    if (g.has('volume_up')) setVolume(1.5);
+    else if (g.has('volume_down')) setVolume(0.3);
 
-    // Pinch → filter sweep
+    // Pinch → filter sweep (unchanged)
     if (g.has('pinch')) {
-        const pinchDist = gestureMixer._pinchDist || 0.05;
-        // Tighter pinch = lower frequency
-        const freq = 200 + (pinchDist / 0.06) * 19800;
+        const freq = 200 + ((gestureMixer._pinchDist || 0.05) / 0.06) * 19800;
         setFilterFrequency(Math.min(20000, freq));
     }
 
-    // Fist → distortion
+    // Fist → reverb (was distortion)
     if (g.has('fist')) {
-        setDistortion(50);
+        setReverbMix((gestureMixer._fistTightness || 0.5) * 0.85);
     }
 
-    // Stereo spread
+    // Finger spread → distortion + bright filter (new gesture)
+    if (g.has('finger_spread')) {
+        const intensity = gestureMixer._spreadIntensity || 0.5;
+        setDistortion(intensity * 35);
+        setFilterFrequency(2000 + intensity * 8000);
+    }
+
+    // Stereo spread → pan + reverb (enhanced — was pan only)
     if (g.has('stereo_spread')) {
         const dist = gestureMixer._stereoDist || 0.3;
-        // Map distance to pan range — wider spread = more stereo
-        const pan = Math.min(1, (dist - 0.3) / 0.4);
-        // Alternate pan based on which hand is further left
-        setStereoPan(pan * 0.8);
+        const normalized = Math.min(1, (dist - 0.3) / 0.5);
+        const midpoint = gestureMixer._stereoMidpoint || 0.5;
+        setStereoPan((0.5 - midpoint) * 2 * normalized * 0.8);
+        setReverbMix(normalized * 0.6);
     }
 
-    // Wave → reverb
+    // Wave → distortion + auto-pan "shatter" (was reverb)
     if (g.has('wave')) {
         const intensity = gestureMixer._waveIntensity || 0.5;
-        setReverbMix(intensity * 0.8);
+        setDistortion(intensity * 70);
+        setStereoPan(Math.sin(Date.now() * 0.01) * intensity * 0.9);
     }
 
-    // Circular → delay/echo
+    // Circular → delay + filter + pitch wobble "vortex" (was simple delay)
     if (g.has('circular')) {
         const intensity = gestureMixer._circularIntensity || 0.5;
-        setDelayParams(0.3 * intensity, 0.4 * intensity);
+        const wobble = Math.sin(Date.now() * 0.008 * intensity) * 0.005 * intensity;
+        setDelayParams(0.2 * intensity + wobble, 0.3 + intensity * 0.4);
+        setFilterFrequency(20000 - intensity * 15000);
     }
 }
 

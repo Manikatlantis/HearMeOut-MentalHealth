@@ -42,7 +42,8 @@ const handGeometry = {
         open_palm:     '#34d399',
         volume_up:     '#f97316',
         volume_down:   '#6366f1',
-        stereo_spread: '#ec4899'
+        stereo_spread: '#ec4899',
+        finger_spread: '#22d3ee'
     },
     DEFAULT_COLOR: '#e2e8f0',
 
