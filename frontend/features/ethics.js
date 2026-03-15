@@ -14,11 +14,11 @@ const ethics = {
             this.show();
         } else {
             this.applyCvOptOut();
-            // If ethics accepted but no pre-questionnaire done this session, show it
+            // If ethics accepted but no mode selected this session, show mode selection
             if (!sessionStorage.getItem('questionnaire_pre_done')) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 if (typeof showScreen === 'function') {
-                    showScreen('questionnairePreScreen');
+                    showScreen('modeSelectScreen');
                 }
             }
         }
@@ -43,9 +43,9 @@ const ethics = {
 
         this.applyCvOptOut();
 
-        // Show questionnaire pre-screen after ethics acceptance
+        // Show mode selection after ethics acceptance
         if (typeof showScreen === 'function') {
-            showScreen('questionnairePreScreen');
+            showScreen('modeSelectScreen');
         }
     },
 

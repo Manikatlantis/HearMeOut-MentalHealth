@@ -20,6 +20,19 @@ def extract_musical_features(context):
     """Analyze narrative context and extract structured musical parameters using Claude."""
     client = _get_client()
 
+    # Include therapy hints if available
+    therapy_hint = ""
+    if context.therapy_profile:
+        tp = context.therapy_profile
+        therapy_hint = f"""
+Therapeutic context — use this to guide your musical choices:
+- The listener needs: {tp.get('therapeutic_goal', 'comfort')}
+- Suggested mood: {tp.get('mood_hint', '')}
+- Suggested energy level: {tp.get('energy_hint', '')}
+- Intensity preference: {tp.get('intensity', 'moderate')}
+Weight the therapeutic needs heavily when choosing tempo, mood, energy, and dynamics.
+"""
+
     prompt = f"""Analyze the following narrative and extract musical parameters.
 Return ONLY a valid JSON object with these fields:
 - tempo (integer, 40-200 BPM)
@@ -31,7 +44,7 @@ Return ONLY a valid JSON object with these fields:
 - energy (float 0.0-1.0, where 0 is very calm and 1 is very intense)
 - dynamics (string: "whisper", "soft", "moderate", "loud", "explosive")
 - duration (integer, 60-120 seconds. Standard songs: 60-90s, epic/atmospheric: 90-120s)
-
+{therapy_hint}
 Narrative:
 {context.narrative}
 

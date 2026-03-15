@@ -17,6 +17,19 @@ def generate_lyrics(context):
     client = _get_client()
     features = context.musical_features.to_dict()
 
+    # Build therapy-informed lyric direction
+    therapy_lyric_guidance = ""
+    if context.therapy_profile:
+        tp = context.therapy_profile
+        therapy_lyric_guidance = f"""
+
+CRITICAL — Therapeutic Direction:
+The listener is feeling {tp.get('emotional_state', 'unknown')} and dealing with {tp.get('concern', 'unknown')}.
+They want: {tp.get('therapeutic_goal', 'comfort')}.
+{tp.get('lyric_direction', '')}
+Intensity: {tp.get('intensity', 'moderate')} — {'keep imagery soft and gentle' if tp.get('intensity') == 'gentle' else 'go deep emotionally' if tp.get('intensity') == 'deep' else 'balance depth with accessibility'}.
+"""
+
     prompt = f"""You are a professional songwriter. Based on the story/narrative and musical features below,
 write song lyrics with exactly this structure:
 
@@ -41,7 +54,7 @@ The lyrics should:
 - Chorus: the emotional core, catchy and memorable
 - Verse 2: deepen the story, add new perspective
 - Bridge: emotional pivot or revelation
-
+{therapy_lyric_guidance}
 Narrative/Story:
 {context.narrative}
 

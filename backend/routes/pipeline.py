@@ -25,6 +25,8 @@ def process(request: ProcessRequest):
         session_id = str(uuid.uuid4())[:8]
 
     orchestrator = Orchestrator(request.text, generator=request.generator)
+    if request.therapy_profile:
+        orchestrator.context.therapy_profile = request.therapy_profile
     context = orchestrator.run_full_cycle()
     sessions[session_id] = orchestrator
 

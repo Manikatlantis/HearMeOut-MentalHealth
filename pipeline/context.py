@@ -48,6 +48,7 @@ class PipelineContext:
         self.pdf_file = None
         self.word_alignment = None
         self.composition_sections = None
+        self.therapy_profile = None
         self.iteration = 0
         self.history = []
 

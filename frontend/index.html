@@ -177,15 +177,35 @@
     <!-- MAIN APP -->
     <div id="app" class="app">
 
+        <!-- MODE SELECTION SCREEN -->
+        <div id="modeSelectScreen" class="screen">
+            <div class="mode-card glass">
+                <h2 class="mode-title">How Would You Like to Heal?</h2>
+                <p class="mode-subtitle">Choose the experience that feels right for you today.</p>
+                <div class="mode-options">
+                    <button class="mode-option" onclick="selectMode('music')">
+                        <span class="mode-icon">&#9835;</span>
+                        <h3>Music Therapy</h3>
+                        <p>Share your story and we'll compose a personalized song with lyrics crafted to support your emotional well-being.</p>
+                    </button>
+                    <button class="mode-option" onclick="selectMode('meditation')">
+                        <span class="mode-icon">&#127774;</span>
+                        <h3>Guided Meditation</h3>
+                        <p>Let us create a calming guided meditation with ambient sounds tailored to how you feel.</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- PRE-SESSION QUESTIONNAIRE -->
         <div id="questionnairePreScreen" class="screen">
             <div class="q-card glass">
-                <h2 class="q-title">How Are You Feeling?</h2>
-                <p class="q-subtitle">Take a moment to check in with yourself before we create your music.</p>
+                <h2 class="q-title">Let's Check In</h2>
+                <p class="q-subtitle">Help us understand where you are so we can create something meaningful for you.</p>
                 <div id="preQuestions" class="q-questions"></div>
                 <p id="preWarning" class="q-warning" style="display:none"></p>
                 <button class="q-submit-btn" onclick="questionnaire.submitPre()">
-                    <span class="btn-text">Continue to Story</span>
+                    <span class="btn-text">Continue</span>
                     <span class="btn-icon">&rarr;</span>
                 </button>
             </div>
@@ -303,39 +323,16 @@
                     <p class="narrative-text" id="narrativeText"></p>
                 </div>
 
-                <!-- Iterate Panel -->
+                <!-- Iterate — simple feedback only -->
                 <div class="iterate-section">
                     <button class="iterate-toggle glass" onclick="toggleIteratePanel()">
-                        <span class="iterate-icon">⟳</span> Remix & Iterate
+                        <span class="iterate-icon">⟳</span> Refine My Song
                     </button>
                     <div id="iteratePanel" class="iterate-panel" style="display:none">
                         <div class="iterate-controls">
                             <div class="iterate-row">
-                                <label>Tempo (BPM)</label>
-                                <div class="iterate-input-group">
-                                    <input type="range" id="iterTempo" min="60" max="200" value="90" oninput="document.getElementById('iterTempoVal').textContent=this.value">
-                                    <span id="iterTempoVal" class="iter-val">90</span>
-                                </div>
-                            </div>
-                            <div class="iterate-row">
-                                <label>Mood</label>
-                                <div class="iterate-chips" id="moodChips"></div>
-                            </div>
-                            <div class="iterate-row">
-                                <label>Genre</label>
-                                <div class="iterate-chips" id="genreChips"></div>
-                            </div>
-                            <div class="iterate-row">
-                                <label>Instruments</label>
-                                <div class="iterate-chips" id="instrumentChips"></div>
-                            </div>
-                            <div class="iterate-row">
-                                <label>Dynamics</label>
-                                <div class="iterate-chips" id="dynamicsChips"></div>
-                            </div>
-                            <div class="iterate-row">
-                                <label>Additional notes</label>
-                                <textarea id="iterNotes" class="iterate-notes" placeholder="e.g. make it more upbeat, add a guitar solo, darker vibe..."></textarea>
+                                <label>How should it change?</label>
+                                <textarea id="iterNotes" class="iterate-notes" placeholder="e.g. make it warmer, more upbeat, slower, add more hope..."></textarea>
                             </div>
                         </div>
                         <button class="iterate-btn" onclick="iterate()">
@@ -351,9 +348,9 @@
                         <span class="action-icon">⬇</span>
                         <span class="btn-text">Download</span>
                     </button>
-                    <button class="action-btn glass" onclick="startMeditation()">
-                        <span class="action-icon">🧘</span>
-                        <span class="btn-text">Meditate</span>
+                    <button class="action-btn glass" onclick="chatbot.toggle()">
+                        <span class="action-icon">&#128172;</span>
+                        <span class="btn-text">Talk About It</span>
                     </button>
                 </div>
 

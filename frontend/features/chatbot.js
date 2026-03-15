@@ -45,10 +45,19 @@ const chatbot = {
         const container = document.getElementById('chatMessages');
         if (!container) return;
 
+        // Show "Use for song" button after 2+ exchanges
+        if (this.history.filter(m => m.role === 'user').length >= 2) {
+            this.showUseForSongBtn();
+        }
+
         if (this.history.length === 0) {
+            const onPlayerScreen = document.getElementById('playerScreen')?.classList.contains('active');
+            const welcomeMsg = onPlayerScreen
+                ? "How did the song feel? Tell me what you liked, what you'd change, or how you're feeling now — I'll help shape your next song."
+                : "Hi there! I'm your music therapy companion. Tell me about what you're feeling, and I'll help you shape it into a story for your song.";
             container.innerHTML = `
                 <div class="chat-welcome">
-                    <p>Hi there! I'm your music therapy companion. Tell me about what you're feeling, and I'll help you shape it into a story for your song.</p>
+                    <p>${welcomeMsg}</p>
                 </div>
             `;
             return;
@@ -133,12 +142,21 @@ const chatbot = {
     },
 
     useForSong() {
-        if (!this.lastSummary) return;
+        // Build story text from summary or last few messages
+        let storyText = this.lastSummary;
+        if (!storyText) {
+            // Use the user's messages as the story input
+            const userMessages = this.history.filter(m => m.role === 'user');
+            storyText = userMessages.map(m => m.content).join('. ');
+        }
+        if (!storyText) return;
+
         const textarea = document.getElementById('storyInput');
         if (textarea) {
-            textarea.value = this.lastSummary;
+            textarea.value = storyText;
             textarea.dispatchEvent(new Event('input'));
         }
+        showScreen('inputScreen');
         this.close();
     },
 

@@ -15,23 +15,23 @@ def meditation(request: MeditationRequest):
     """Generate meditation script + ambient audio."""
     ensure_user(request.user_id)
 
-    from pipeline.meditation_generator import generate_meditation_script, generate_ambient_music
+    from pipeline.meditation_generator import generate_meditation_script, generate_narration
 
     script = generate_meditation_script(
         story_context=request.story_context,
         mode=request.mode,
     )
 
-    # Generate ambient music
+    # Generate spoken narration
     label = request.session_id or str(uuid.uuid4())[:8]
     try:
-        audio_path = generate_ambient_music(
-            duration_seconds=script["duration_estimate"],
+        audio_path = generate_narration(
+            segments=script["segments"],
             session_label=label,
         )
         audio_url = "/audio/" + Path(audio_path).name
     except Exception as e:
-        print(f"Meditation audio generation failed: {e}")
+        print(f"Meditation narration generation failed: {e}")
         audio_url = None
 
     return {

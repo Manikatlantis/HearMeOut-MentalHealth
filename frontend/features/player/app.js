@@ -62,13 +62,19 @@ async function generate() {
         currentSessionId = (typeof questionnaire !== 'undefined' && questionnaire.sessionId)
             ? questionnaire.sessionId
             : 'session_' + Date.now();
+
+        // Include therapy profile from quiz if available
+        const storedProfile = sessionStorage.getItem('therapy_profile');
+        const profile = storedProfile ? JSON.parse(storedProfile) : null;
+
         const response = await fetch('/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 text,
                 session_id: currentSessionId,
-                user_id: getUserId()
+                user_id: getUserId(),
+                therapy_profile: profile
             })
         });
 
@@ -136,10 +142,8 @@ function displayResults(data) {
     document.getElementById('trackTitle').textContent =
         capitalize(f.mood) + ' ' + capitalize(f.genre);
 
-    // Tags
-    const tags = [f.genre, f.mood, f.tempo + ' BPM', f.scale, f.dynamics, ...f.instruments];
-    document.getElementById('trackTags').innerHTML =
-        tags.map(t => `<span class="tag">${t}</span>`).join('');
+    // Hide technical music tags — not relevant for mental health experience
+    document.getElementById('trackTags').innerHTML = '';
 
     // Lyrics
     document.getElementById('lyricsStatic').textContent = data.lyrics || 'No lyrics';
@@ -491,7 +495,16 @@ function reset() {
         if (btnText) btnText.textContent = 'Camera';
     }
 
-    showScreen('inputScreen');
+    // Clear session state so user picks mode again
+    sessionStorage.removeItem('questionnaire_pre_done');
+    sessionStorage.removeItem('therapy_profile');
+    sessionStorage.removeItem('hearmeout_mode');
+    if (typeof questionnaire !== 'undefined') {
+        questionnaire.preAnswers = null;
+        questionnaire.postAnswers = null;
+    }
+
+    showScreen('modeSelectScreen');
 }
 
 // ---- Iterate Panel ----
@@ -561,35 +574,8 @@ function toggleChip(key, value, containerId) {
 }
 
 function buildFeedbackString() {
-    const parts = [];
-    const f = currentData.musical_features;
-    const newTempo = parseInt(document.getElementById('iterTempo').value);
-
-    if (newTempo !== f.tempo) {
-        parts.push(`Change tempo to ${newTempo} BPM`);
-    }
-    if (iterateSelections.moods.length && iterateSelections.moods[0] !== f.mood) {
-        parts.push(`Change mood to ${iterateSelections.moods.join(', ')}`);
-    }
-    if (iterateSelections.genres.length && iterateSelections.genres[0] !== f.genre) {
-        parts.push(`Change genre to ${iterateSelections.genres.join(', ')}`);
-    }
-
-    const origInst = new Set(f.instruments);
-    const newInst = new Set(iterateSelections.instruments);
-    const added = iterateSelections.instruments.filter(i => !origInst.has(i));
-    const removed = f.instruments.filter(i => !newInst.has(i));
-    if (added.length) parts.push(`Add instruments: ${added.join(', ')}`);
-    if (removed.length) parts.push(`Remove instruments: ${removed.join(', ')}`);
-
-    if (iterateSelections.dynamics.length && iterateSelections.dynamics[0] !== f.dynamics) {
-        parts.push(`Change dynamics to ${iterateSelections.dynamics[0]}`);
-    }
-
     const notes = document.getElementById('iterNotes').value.trim();
-    if (notes) parts.push(notes);
-
-    return parts.join('. ') || 'Regenerate with similar settings';
+    return notes || 'Regenerate with similar settings';
 }
 
 async function iterate() {

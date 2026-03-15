@@ -1,5 +1,6 @@
 """Pydantic models for pipeline endpoints."""
 
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -8,6 +9,7 @@ class ProcessRequest(BaseModel):
     session_id: str = "default"
     generator: str = "eleven"
     user_id: str = "anonymous"
+    therapy_profile: Optional[dict] = None
 
 
 class FeedbackRequest(BaseModel):
