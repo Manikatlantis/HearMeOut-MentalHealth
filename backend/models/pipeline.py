@@ -1,5 +1,6 @@
 """Pydantic models for pipeline endpoints."""
 
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -8,6 +9,8 @@ class ProcessRequest(BaseModel):
     session_id: str = "default"
     generator: str = "eleven"
     user_id: str = "anonymous"
+    emotional_profile: Optional[dict] = None
+    therapeutic_context: Optional[dict] = None  # backward compat alias
 
 
 class FeedbackRequest(BaseModel):

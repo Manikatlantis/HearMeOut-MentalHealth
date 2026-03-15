@@ -125,6 +125,24 @@ RULES:
 - Include "catchy vocal melody" always
 - Return ONLY valid JSON, no other text."""
 
+    ep = context.emotional_profile
+    if ep:
+        domain = ep.get('emotional_domain', ep.get('concern', ''))
+        therapeutic_need = ep.get('therapeutic_need', '')
+        primary_emotion = ep.get('primary_emotion', '')
+
+        prompt += f"""
+
+THERAPEUTIC PRODUCTION NOTES:
+This song addresses {domain}. The listener's primary emotion is {primary_emotion}.
+Their therapeutic need is {therapeutic_need}.
+Relationship type: {ep.get('relationship_type', 'unknown')} — ensure vocal delivery matches this context.
+Ensure the vocal delivery feels warm, genuine, and emotionally safe.
+The production should support the therapeutic journey — starting where the listener is
+emotionally ({primary_emotion}) and building toward {ep.get('what_would_help', 'genuine emotional resolution')}
+by the chorus and final sections.
+AVOID any vocal delivery that sounds dismissive, preachy, or artificially cheerful."""
+
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=512,

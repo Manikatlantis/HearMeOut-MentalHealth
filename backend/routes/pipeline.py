@@ -24,7 +24,9 @@ def process(request: ProcessRequest):
     if session_id == "default":
         session_id = str(uuid.uuid4())[:8]
 
-    orchestrator = Orchestrator(request.text, generator=request.generator)
+    # Prefer emotional_profile, fall back to therapeutic_context for backward compat
+    profile = request.emotional_profile or request.therapeutic_context
+    orchestrator = Orchestrator(request.text, generator=request.generator, emotional_profile=profile)
     context = orchestrator.run_full_cycle()
     sessions[session_id] = orchestrator
 

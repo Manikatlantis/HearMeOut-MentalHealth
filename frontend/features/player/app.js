@@ -62,14 +62,20 @@ async function generate() {
         currentSessionId = (typeof questionnaire !== 'undefined' && questionnaire.sessionId)
             ? questionnaire.sessionId
             : 'session_' + Date.now();
+        const processBody = {
+            text,
+            session_id: currentSessionId,
+            user_id: getUserId()
+        };
+        // Include emotional profile from chatbot if available
+        if (window._emotionalProfile) {
+            processBody.emotional_profile = window._emotionalProfile;
+            window._emotionalProfile = null;
+        }
         const response = await fetch('/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text,
-                session_id: currentSessionId,
-                user_id: getUserId()
-            })
+            body: JSON.stringify(processBody)
         });
 
         if (!response.ok) throw new Error('Generation failed');

@@ -15,8 +15,10 @@ class Orchestrator:
 
     STAGES = ["narrative", "analyze", "lyrics", "generate", "document"]
 
-    def __init__(self, user_input: str, generator: str = "eleven"):
-        self.context = PipelineContext(user_input)
+    def __init__(self, user_input: str, generator: str = "eleven",
+                 therapeutic_context: dict = None, emotional_profile: dict = None):
+        profile = emotional_profile or therapeutic_context
+        self.context = PipelineContext(user_input, emotional_profile=profile)
         self.generator = generator
 
     def run_full_cycle(self):
@@ -24,6 +26,7 @@ class Orchestrator:
         self.expand_narrative()
         self.extract_features()
         self.generate_lyrics()
+        self.check_lyric_fidelity()
         self.generate_audio()
         self.align_lyrics()
         self.generate_document()
@@ -40,6 +43,17 @@ class Orchestrator:
     def generate_lyrics(self):
         from pipeline.lyrics_generator import generate_lyrics
         generate_lyrics(self.context)
+        return self
+
+    def check_lyric_fidelity(self):
+        """Run therapeutic fidelity check on generated lyrics; regenerate if failed."""
+        if not self.context.emotional_profile:
+            return self
+        try:
+            from pipeline.lyrics_generator import check_lyric_fidelity
+            check_lyric_fidelity(self.context)
+        except Exception as e:
+            print(f"  Lyric fidelity check failed (non-fatal): {e}")
         return self
 
     def generate_audio(self):

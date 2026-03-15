@@ -31,6 +31,50 @@ by the description. Focus on sensory details that can translate into musical ele
 Keep the narrative to 2-3 paragraphs.
 
 User input: {context.original_input}"""
+
+        ep = context.emotional_profile
+        if ep and ep.get('emotional_domain'):
+            # Rich emotional profile available — use detailed guidance
+            prompt += f"""
+
+EMOTIONAL CONTEXT (use this to shape the narrative accurately):
+- Relationship type: {ep.get('relationship_type', 'unknown')}
+- Relationship details: {ep.get('relationship_details', '')}
+- Trigger event: {ep.get('trigger_event', '')}
+- Emotional domain: {ep.get('emotional_domain', '')}
+- Primary emotion: {ep.get('primary_emotion', '')}
+- Secondary emotions: {', '.join(ep.get('secondary_emotions', []))}
+- Recurring pattern: {ep.get('recurring_pattern', 'none identified')}
+- Core wound: {ep.get('core_wound', '')}
+- Feared future: {ep.get('feared_future', '')}
+- Concrete images from their story: {', '.join(ep.get('concrete_images', []))}
+
+CRITICAL NARRATIVE RULES:
+1. This is about a {ep.get('relationship_type', '')} relationship — use ONLY imagery appropriate
+   to this relationship type. Do NOT default to romantic imagery unless the relationship IS romantic.
+2. Reference the SPECIFIC trigger event: {ep.get('trigger_event', '')}
+3. Use concrete images from their story: {', '.join(ep.get('concrete_images', []))}
+   Do NOT invent details they didn't share.
+4. The narrative arc should move from {ep.get('primary_emotion', 'their current feeling')} toward
+   {ep.get('therapeutic_need', 'emotional resolution')}.
+5. AVOID anything that sounds like: {ep.get('what_would_hurt', 'dismissive platitudes')}
+6. The narrative should feel like it UNDERSTANDS their specific situation, not a generic version of sadness.
+
+Shape the narrative as a journey — starting from where they are emotionally (acknowledging
+{ep.get('primary_emotion', 'their pain')} and the reality of {ep.get('trigger_event', 'what happened')}),
+then moving toward {ep.get('what_would_help', 'genuine understanding and hope')}.
+Do NOT mention diagnoses or clinical terms. Keep it poetic and musical."""
+        elif ep:
+            # Legacy therapeutic_context format — basic guidance
+            prompt += f"""
+
+THERAPEUTIC GUIDANCE:
+The user is experiencing {ep.get('concern', 'emotional difficulty')}, with themes of {', '.join(ep.get('themes', []))}.
+Their primary therapeutic need is {ep.get('therapeutic_need', 'support')}.
+Shape the narrative to acknowledge these feelings authentically, then gently guide toward
+{ep.get('therapeutic_need', 'healing')}. The narrative should feel like a journey — starting from where
+the user is emotionally, and moving toward a sense of resolution or hope by the end.
+Do NOT mention diagnoses or clinical terms. Keep it poetic and musical."""
     else:
         prompt = f"""You are a creative music storyteller refining a musical narrative.
 

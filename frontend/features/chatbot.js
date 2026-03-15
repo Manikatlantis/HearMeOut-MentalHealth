@@ -6,6 +6,7 @@ const chatbot = {
     isOpen: false,
     history: [],
     lastSummary: null,
+    lastEmotionalProfile: null,
 
     toggle() {
         const panel = document.getElementById('chatbotPanel');
@@ -115,6 +116,13 @@ const chatbot = {
             this.history.push({ role: 'assistant', content: data.reply });
             this.renderMessages();
 
+            // Store emotional profile if present (with backward compat)
+            if (data.emotional_profile) {
+                this.lastEmotionalProfile = data.emotional_profile;
+            } else if (data.therapeutic_context) {
+                this.lastEmotionalProfile = data.therapeutic_context;
+            }
+
             // Check if response contains a summary
             if (data.summary) {
                 this.lastSummary = data.summary;
@@ -139,6 +147,8 @@ const chatbot = {
             textarea.value = this.lastSummary;
             textarea.dispatchEvent(new Event('input'));
         }
+        // Pass emotional profile to the generate flow
+        window._emotionalProfile = this.lastEmotionalProfile || null;
         this.close();
     },
 

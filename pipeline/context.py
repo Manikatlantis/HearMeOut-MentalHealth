@@ -39,8 +39,11 @@ class MusicalFeatures:
 class PipelineContext:
     """Central artifact that flows through and evolves across pipeline iterations."""
 
-    def __init__(self, user_input: str):
+    def __init__(self, user_input: str, therapeutic_context: dict = None,
+                 emotional_profile: dict = None):
         self.original_input = user_input
+        # Support both old therapeutic_context and new emotional_profile
+        self.emotional_profile = emotional_profile or therapeutic_context
         self.narrative = ""
         self.musical_features = MusicalFeatures()
         self.lyrics = ""
@@ -51,6 +54,15 @@ class PipelineContext:
         self.iteration = 0
         self.history = []
 
+    @property
+    def therapeutic_context(self):
+        """Backward-compatible alias for emotional_profile."""
+        return self.emotional_profile
+
+    @therapeutic_context.setter
+    def therapeutic_context(self, value):
+        self.emotional_profile = value
+
     def snapshot(self):
         """Capture current state for history tracking."""
         return {
@@ -59,6 +71,7 @@ class PipelineContext:
             "musical_features": self.musical_features.to_dict(),
             "lyrics": self.lyrics,
             "audio_file": self.audio_file,
+            "emotional_profile": self.emotional_profile,
         }
 
     def save_to_history(self):
@@ -73,6 +86,8 @@ class PipelineContext:
     def get_accumulated_context(self):
         """Build a summary of all context for AI prompts."""
         parts = [f"Original request: {self.original_input}"]
+        if self.emotional_profile:
+            parts.append(f"Emotional profile: {json.dumps(self.emotional_profile)}")
         if self.narrative:
             parts.append(f"Current narrative:\n{self.narrative}")
         parts.append(f"Current musical features:\n{self.musical_features.to_json()}")

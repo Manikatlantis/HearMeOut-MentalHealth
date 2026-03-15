@@ -40,6 +40,51 @@ Current musical features for reference (adjust based on narrative):
 
 Return ONLY the JSON object, no other text."""
 
+    ep = context.emotional_profile
+    if ep:
+        # Map emotional_domain to music therapy guidelines
+        domain = ep.get('emotional_domain', ep.get('concern', ''))
+        therapeutic_need = ep.get('therapeutic_need', '')
+
+        therapy_guidelines = {
+            'anxiety': 'Prefer 60-80 BPM, major keys, soft dynamics, legato instruments (piano, strings, acoustic guitar). Avoid abrupt changes or aggressive sounds.',
+            'depression': 'Start at a matching low energy (70-85 BPM, minor key) then subtly build toward warmth. Use warm timbres (cello, piano, gentle vocals). Aim for a hopeful, uplifting quality by the chorus.',
+            'grief': 'Allow space for sadness — 65-80 BPM, minor or modal scales, piano and strings. Build gently toward acceptance and warmth, not forced happiness.',
+            'stress': 'Calming: 60-75 BPM, major keys, ambient textures, nature-like sounds. Prioritize steady rhythms and predictable harmonic progressions.',
+            'loneliness': 'Warm, enveloping sounds — 75-90 BPM, rich harmonies, layered instruments. Use sounds that feel like companionship (duets, harmonized vocals, full arrangements).',
+            'trauma': 'Grounding and safe: 65-80 BPM, predictable structure, warm low-frequency instruments. Avoid sudden loud dynamics or dissonant chords.',
+            'anger': 'Start with moderate energy that validates the feeling (90-110 BPM), then gradually shift toward release and resolution. Channel intensity constructively.',
+            'burnout': 'Restorative: 65-80 BPM, gentle dynamics, acoustic instruments, open spacious arrangements. Music should feel like rest and renewal.',
+            'low_self_esteem': 'Empowering: 85-100 BPM, major keys, confident dynamics that build. Use anthemic qualities — strong chorus, uplifting progression.',
+            'inadequacy': 'Empowering: 85-100 BPM, major keys, confident dynamics that build. Use anthemic qualities — strong chorus, uplifting progression.',
+            'overwhelm': 'Simplify: 60-75 BPM, minimal arrangement, one or two lead instruments. Create space and breathing room in the music.',
+            'friendship_loss': 'Warm, nostalgic: 70-85 BPM, acoustic instruments (guitar, piano), tender dynamics. Build from aching to warm acceptance.',
+            'romantic_breakup': 'Raw, honest: 75-90 BPM, minor keys, piano/guitar-driven. Allow emotional intensity, build toward resilience.',
+            'heartbreak': 'Raw, honest: 75-90 BPM, minor keys, piano/guitar-driven. Allow emotional intensity, build toward resilience.',
+            'abandonment': 'Tender, aching: 70-80 BPM, minor to major shift at bridge, warm acoustic instruments. Build from fear to self-worth.',
+            'self_blame': 'Gentle, affirming: 75-85 BPM, warm timbres, building dynamics. Start reflective, build toward self-compassion.',
+            'shame': 'Tender, non-judgmental: 70-80 BPM, soft dynamics building gradually, warm enveloping arrangement.',
+            'rejection': 'Compassionate: 75-85 BPM, warm harmonies, building arrangement. Start intimate, build toward belonging.',
+            'estrangement': 'Complex, honest: 70-85 BPM, mixed modes, layered arrangement. Allow ambiguity, honor grief for what should have been.',
+            'family_conflict': 'Complex, honest: 70-85 BPM, mixed modes, layered arrangement. Allow ambiguity, honor grief for what should have been.',
+            'invisibility': 'Affirming, warm: 80-90 BPM, building dynamics, rich harmonies. Start quiet, build to being heard.',
+            'hopelessness': 'Patient, present: 60-75 BPM, gentle steady rhythm, warm low instruments. Do not demand joy — offer the smallest light.',
+        }
+
+        guideline = therapy_guidelines.get(domain, '')
+        # Fall back to concern field for legacy profiles
+        if not guideline and ep.get('concern'):
+            guideline = therapy_guidelines.get(ep['concern'], '')
+
+        prompt += f"""
+
+MUSIC THERAPY GUIDELINES (use as preferences, balance with the narrative's natural genre):
+Emotional domain: {domain}
+Primary emotion: {ep.get('primary_emotion', '')}
+Therapeutic need: {therapeutic_need}
+{guideline}
+These are evidence-based suggestions — adapt them to fit the genre naturally rather than overriding it."""
+
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,
