@@ -6,7 +6,8 @@
 let cvUI = {
     webcamActive: false,
     stream: null,
-    gestureGuideVisible: false
+    gestureGuideVisible: false,
+    overlayRafId: null
 };
 
 // --- Webcam Toggle ---
@@ -25,7 +26,7 @@ async function toggleWebcam() {
         // Start
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 320, height: 240, facingMode: 'user' }
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
             });
             cvUI.stream = stream;
             video.srcObject = stream;
@@ -34,7 +35,11 @@ async function toggleWebcam() {
             btn.classList.add('active');
             btn.querySelector('.btn-text').textContent = 'Camera On';
 
-            document.getElementById('webcamOverlay').classList.add('visible');
+            // Dock webcam into current screen
+            const activeScreen = document.querySelector('.screen.active');
+            if (activeScreen) {
+                updateWebcamForScreen(activeScreen.id);
+            }
 
             // Init models if not done
             const emotionReady = await initEmotionModels();
@@ -47,6 +52,21 @@ async function toggleWebcam() {
                 startGestureMixer();
                 document.getElementById('effectIndicators').classList.add('visible');
             }
+
+            // Init shared geometry canvas and overlays
+            const hgCanvas = document.getElementById('handGeometryCanvas');
+            if (hgCanvas) {
+                if (typeof handGeometry !== 'undefined') {
+                    handGeometry.init(hgCanvas);
+                }
+                if (typeof faceGeometry !== 'undefined') {
+                    faceGeometry.init(hgCanvas);
+                }
+            }
+            if (typeof faceEmotionPanel !== 'undefined') {
+                faceEmotionPanel.init();
+            }
+            startOverlayRenderLoop();
         } catch (e) {
             console.warn('Camera access denied:', e);
             btn.disabled = true;
@@ -65,11 +85,110 @@ function stopWebcam() {
     const video = document.getElementById('cvVideo');
     if (video) video.srcObject = null;
 
-    document.getElementById('webcamOverlay').classList.remove('visible');
+    // Deactivate all docks and move overlay back to body
+    const overlay = document.getElementById('webcamOverlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+        document.body.appendChild(overlay);
+    }
+    document.querySelectorAll('.webcam-dock').forEach(d => d.classList.remove('active'));
     document.getElementById('effectIndicators').classList.remove('visible');
 
+    if (cvUI.overlayRafId) {
+        cancelAnimationFrame(cvUI.overlayRafId);
+        cvUI.overlayRafId = null;
+    }
+    if (typeof faceGeometry !== 'undefined') faceGeometry.destroy();
+    if (typeof faceEmotionPanel !== 'undefined') faceEmotionPanel.destroy();
+    if (typeof handGeometry !== 'undefined') handGeometry.destroy();
     stopGestureMixer();
     stopEmotionTracking();
+}
+
+// --- Shared overlay render loop ---
+
+function startOverlayRenderLoop() {
+    const canvas = document.getElementById('handGeometryCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function loop() {
+        cvUI.overlayRafId = requestAnimationFrame(loop);
+
+        // Sync canvas size
+        const rect = canvas.getBoundingClientRect();
+        const dw = Math.round(rect.width) || 320;
+        const dh = Math.round(rect.height) || 240;
+        if (canvas.width !== dw || canvas.height !== dh) {
+            canvas.width = dw;
+            canvas.height = dh;
+        }
+
+        // Clear once per frame
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw face geometry first (underneath hands)
+        if (typeof faceGeometry !== 'undefined') {
+            faceGeometry.drawFrame(ctx, canvas);
+        }
+
+        // Draw hand geometry on top
+        if (typeof handGeometry !== 'undefined') {
+            handGeometry.drawFrame(ctx, canvas);
+        }
+    }
+
+    cvUI.overlayRafId = requestAnimationFrame(loop);
+}
+
+// --- Persistent webcam across screens (reparenting into docks) ---
+
+const _webcamDockMap = {
+    'playerScreen': 'playerWebcamDock',
+    'meditationScreen': 'meditationWebcamDock'
+};
+
+function updateWebcamForScreen(screenId) {
+    const overlay = document.getElementById('webcamOverlay');
+    if (!overlay) return;
+
+    // Deactivate all docks
+    document.querySelectorAll('.webcam-dock').forEach(d => d.classList.remove('active'));
+
+    if (!cvUI.webcamActive) return;
+
+    const dockId = _webcamDockMap[screenId];
+    if (dockId) {
+        const dock = document.getElementById(dockId);
+        if (dock) {
+            dock.appendChild(overlay);
+            dock.classList.add('active');
+            overlay.classList.add('visible');
+        }
+    } else {
+        // Move back to body, hide overlay (stream stays alive)
+        document.body.appendChild(overlay);
+        overlay.classList.remove('visible');
+    }
+}
+
+function updateWebcamForLyricsOverlay(isShowing) {
+    const overlay = document.getElementById('webcamOverlay');
+    if (!overlay || !cvUI.webcamActive) return;
+
+    document.querySelectorAll('.webcam-dock').forEach(d => d.classList.remove('active'));
+
+    if (isShowing) {
+        const dock = document.getElementById('lyricsWebcamDock');
+        if (dock) {
+            dock.appendChild(overlay);
+            dock.classList.add('active');
+            overlay.classList.add('visible');
+        }
+    } else {
+        // Return to player dock
+        updateWebcamForScreen('playerScreen');
+    }
 }
 
 // --- Effect Indicator Bar ---

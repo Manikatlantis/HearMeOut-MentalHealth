@@ -111,4 +111,5 @@ These are evidence-based suggestions — adapt them to fit the genre naturally r
 
     features_dict = json.loads(text)
     context.musical_features = MusicalFeatures.from_dict(features_dict)
+    context.musical_features.duration = 60  # 60s for proper vocals while saving credits
     return context

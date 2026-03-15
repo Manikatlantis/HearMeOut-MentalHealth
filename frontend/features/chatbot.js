@@ -46,8 +46,8 @@ const chatbot = {
         const container = document.getElementById('chatMessages');
         if (!container) return;
 
-        // Show "Use for song" button after 2+ exchanges
-        if (this.history.filter(m => m.role === 'user').length >= 2) {
+        // Show "Use for song" button after 5+ exchanges (matching backend's 5-8 exchange guideline)
+        if (this.history.filter(m => m.role === 'user').length >= 5) {
             this.showUseForSongBtn();
         }
 

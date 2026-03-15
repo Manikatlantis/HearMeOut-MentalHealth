@@ -39,6 +39,9 @@ function showScreen(id) {
     if (id === 'questionnairePostScreen' && typeof questionnaire !== 'undefined') {
         questionnaire.renderQuestions('postQuestions');
     }
+
+    // Keep webcam overlay in sync with active screen
+    if (typeof updateWebcamForScreen === 'function') updateWebcamForScreen(id);
 }
 
 // ---- Generate Song ----
@@ -362,6 +365,7 @@ function showLyricsOverlay() {
     overlay.classList.remove('hidden');
     overlay.classList.add('visible');
     if (typeof setLyricsActive === 'function') setLyricsActive(true);
+    if (typeof updateWebcamForLyricsOverlay === 'function') updateWebcamForLyricsOverlay(true);
 }
 
 function hideLyricsOverlay() {
@@ -370,6 +374,7 @@ function hideLyricsOverlay() {
     overlay.classList.add('hidden');
     lastActiveIdx = -1;
     if (typeof setLyricsActive === 'function') setLyricsActive(false);
+    if (typeof updateWebcamForLyricsOverlay === 'function') updateWebcamForLyricsOverlay(false);
 }
 
 function updateLyricsOverlay(currentTime, duration) {
