@@ -76,6 +76,10 @@ body {
 .screen.active { display: block; }
 #playerScreen { max-width: 960px; }
 #meditationScreen { max-width: 960px; }
+#playerScreen,
+#meditationScreen {
+    justify-content: flex-start;
+}
 
 @keyframes fadeSlideUp {
     from { opacity: 0; transform: translateY(40px); }

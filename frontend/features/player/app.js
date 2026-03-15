@@ -35,13 +35,8 @@ function showScreen(id) {
     // Scroll to top when switching screens
     window.scrollTo(0, 0);
 
-    // Lock body scroll on screens that fill the viewport
-    const fixedScreens = ['modeSelectScreen', 'questionnairePreScreen', 'questionnairePostScreen'];
-    if (fixedScreens.includes(id)) {
-        document.body.style.overflow = 'hidden';
-    } else {
-        document.body.style.overflow = '';
-    }
+    // Lock body scroll — all screens are fixed viewport overlays
+    document.body.style.overflow = 'hidden';
 
     // Render questionnaire questions when screens are shown
     if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
@@ -49,6 +44,16 @@ function showScreen(id) {
     }
     if (id === 'questionnairePostScreen' && typeof questionnaire !== 'undefined') {
         questionnaire.renderQuestions('postQuestions');
+    }
+
+    // Stop meditation audio when navigating away from meditation screen
+    if (id !== 'meditationScreen' && typeof meditationAudio !== 'undefined' && meditationAudio) {
+        clearTimeout(meditationTimer);
+        meditationAudio.pause();
+        meditationAudio = null;
+        meditationData = null;
+        meditationSegmentIndex = 0;
+        meditationPaused = false;
     }
 
     // Keep webcam overlay in sync with active screen

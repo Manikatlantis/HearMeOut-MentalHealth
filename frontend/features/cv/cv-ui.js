@@ -47,6 +47,8 @@ async function toggleWebcam() {
 
             if (emotionReady) {
                 document.getElementById('emotionBadge').style.display = 'block';
+                // Start face detection immediately so face geometry works on all screens
+                startEmotionTracking(video);
             }
             if (gestureReady) {
                 startGestureMixer();

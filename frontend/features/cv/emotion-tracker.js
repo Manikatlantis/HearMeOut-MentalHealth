@@ -37,6 +37,8 @@ async function initEmotionModels() {
 
 function startEmotionTracking(videoElement) {
     if (!emotionTracker.modelsLoaded || !videoElement) return;
+    // Don't restart if already running — avoids leaking intervals and wiping timeline
+    if (emotionTracker.active && emotionTracker.intervalId) return;
     emotionTracker.active = true;
     emotionTracker.videoEl = videoElement;
     emotionTracker.timeline = [];

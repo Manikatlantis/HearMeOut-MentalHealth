@@ -219,7 +219,7 @@ const emotionArc = {
         const wrap = canvas.parentElement;
         const dpr = window.devicePixelRatio || 1;
         const w = wrap.clientWidth;
-        const h = 220;
+        const h = 300;
         canvas.width = w * dpr;
         canvas.height = h * dpr;
         canvas.style.width = w + 'px';
@@ -246,7 +246,7 @@ const emotionArc = {
         this.drawStreams(ctx, smoothed, totalDuration, pad, chartW, chartH);
 
         // Draw time axis
-        this.drawTimeAxis(ctx, totalDuration, pad, chartW, h);
+        this.drawTimeAxis(ctx, totalDuration, pad, chartW, h, smoothed);
     },
 
     drawSections(ctx, sections, totalDuration, pad, chartW, chartH) {
@@ -276,9 +276,17 @@ const emotionArc = {
     drawStreams(ctx, smoothed, totalDuration, pad, chartW, chartH) {
         if (smoothed.length < 2) return;
 
+        // If data only covers a small portion of the timeline, spread it across the full width
+        const dataStart = smoothed[0].timestamp;
+        const dataEnd = smoothed[smoothed.length - 1].timestamp;
+        const dataSpan = dataEnd - dataStart;
+        const useSpread = dataSpan < totalDuration * 0.3;
+
         // Build stacked values
-        const points = smoothed.map(entry => {
-            const x = pad.left + (entry.timestamp / totalDuration) * chartW;
+        const points = smoothed.map((entry, i) => {
+            const x = useSpread
+                ? pad.left + (i / (smoothed.length - 1)) * chartW
+                : pad.left + (entry.timestamp / totalDuration) * chartW;
             let cumulative = 0;
             const stack = {};
             for (const emo of this.EMOTIONS) {
@@ -339,16 +347,32 @@ const emotionArc = {
         }
     },
 
-    drawTimeAxis(ctx, totalDuration, pad, chartW, canvasH) {
+    drawTimeAxis(ctx, totalDuration, pad, chartW, canvasH, smoothed) {
         const y = canvasH - 8;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.font = '10px Inter, sans-serif';
+        ctx.font = '11px Inter, sans-serif';
         ctx.textAlign = 'center';
 
-        const interval = totalDuration <= 30 ? 5 : totalDuration <= 60 ? 10 : 15;
-        for (let t = 0; t <= totalDuration; t += interval) {
-            const x = pad.left + (t / totalDuration) * chartW;
-            ctx.fillText(this.formatTime(t), x, y);
+        // Check if data was spread across the chart
+        const dataStart = smoothed && smoothed.length > 1 ? smoothed[0].timestamp : 0;
+        const dataEnd = smoothed && smoothed.length > 1 ? smoothed[smoothed.length - 1].timestamp : totalDuration;
+        const dataSpan = dataEnd - dataStart;
+        const useSpread = smoothed && dataSpan < totalDuration * 0.3;
+
+        if (useSpread && smoothed) {
+            // Show evenly spaced labels from actual data range
+            const numLabels = Math.min(6, smoothed.length);
+            for (let i = 0; i < numLabels; i++) {
+                const idx = Math.round(i * (smoothed.length - 1) / (numLabels - 1));
+                const x = pad.left + (idx / (smoothed.length - 1)) * chartW;
+                ctx.fillText(this.formatTime(smoothed[idx].timestamp), x, y);
+            }
+        } else {
+            const interval = totalDuration <= 30 ? 5 : totalDuration <= 60 ? 15 : 15;
+            for (let t = 0; t <= totalDuration; t += interval) {
+                const x = pad.left + (t / totalDuration) * chartW;
+                ctx.fillText(this.formatTime(t), x, y);
+            }
         }
     },
 
