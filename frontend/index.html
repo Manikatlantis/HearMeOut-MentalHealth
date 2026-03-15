@@ -16,7 +16,10 @@
     <!-- LYRICS OVERLAY — fullscreen animated lyrics during playback -->
     <div id="lyricsOverlay" class="lyrics-overlay hidden">
         <button class="lyrics-close" onclick="hideLyricsOverlay()">✕</button>
-        <div id="lyricsLines" class="lyrics-lines"></div>
+        <div class="lyrics-overlay-split">
+            <div class="webcam-dock" id="lyricsWebcamDock"></div>
+            <div id="lyricsLines" class="lyrics-lines"></div>
+        </div>
         <div class="lyrics-mini-controls">
             <button class="mini-play" onclick="togglePlay()">
                 <span id="miniPlayIcon">❚❚</span>
@@ -294,9 +297,12 @@
                     <span class="time-display" id="timeDisplay">0:00</span>
                 </div>
 
-                <div class="lyrics-section">
-                    <h3>Lyrics</h3>
-                    <div class="lyrics-static" id="lyricsStatic"></div>
+                <div class="player-main-content">
+                    <div class="webcam-dock" id="playerWebcamDock"></div>
+                    <div class="lyrics-section">
+                        <h3>Lyrics</h3>
+                        <div class="lyrics-static" id="lyricsStatic"></div>
+                    </div>
                 </div>
 
                 <div class="narrative-section">
@@ -381,6 +387,7 @@
                     <button class="meditation-close" onclick="exitMeditation()">✕</button>
                 </div>
                 <div class="meditation-body">
+                    <div class="webcam-dock meditation-webcam-dock" id="meditationWebcamDock"></div>
                     <div class="meditation-breath-ring"></div>
                     <p class="meditation-text" id="meditationText">Preparing your meditation...</p>
                 </div>

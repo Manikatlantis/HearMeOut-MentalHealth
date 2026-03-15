@@ -48,11 +48,21 @@ const handGeometry = {
 
     init(canvas) {
         this.canvas = canvas;
-        canvas.width = 320;
-        canvas.height = 240;
         this.ctx = canvas.getContext('2d');
         this.prevLandmarks = [];
         this.particles = [];
+        this._syncSize();
+    },
+
+    _syncSize() {
+        if (!this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const dw = Math.round(rect.width) || 320;
+        const dh = Math.round(rect.height) || 240;
+        if (this.canvas.width !== dw || this.canvas.height !== dh) {
+            this.canvas.width = dw;
+            this.canvas.height = dh;
+        }
     },
 
     destroy() {
@@ -67,6 +77,7 @@ const handGeometry = {
 
     draw(multiHandLandmarks, activeGestures) {
         if (!this.ctx || !this.canvas) return;
+        this._syncSize();
         const ctx = this.ctx;
         const w = this.canvas.width;
         const h = this.canvas.height;
