@@ -2658,10 +2658,6 @@ audio { display: none; }
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-.dashboard-chart-section canvas {
-    width: 100%;
-    border-radius: 8px;
-}
 .dashboard-empty {
     font-size: 13px;
     color: var(--text-dim);
@@ -2675,25 +2671,29 @@ audio { display: none; }
     text-align: center;
     padding: 40px 0;
 }
-.donut-legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 14px;
+.chart-container {
+    position: relative;
 }
-.donut-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.radar-container {
+    padding: 10px 0;
+}
+.chart-tooltip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(20, 20, 30, 0.92);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #f0eef5;
     font-size: 12px;
-    color: var(--text-dim);
+    padding: 5px 10px;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    z-index: 10;
 }
-.donut-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+.dashboard-chart-section canvas {
+    cursor: crosshair;
 }
 .history-buttons-row {
     display: flex;
