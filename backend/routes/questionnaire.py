@@ -9,6 +9,7 @@ from backend.models import QuestionnaireRequest, SessionEmotionData, SessionReca
 from backend.db import (
     save_questionnaire, get_questionnaire_comparison,
     save_emotion_data, get_session, get_dashboard_data,
+    get_diary_entries,
 )
 
 router = APIRouter()
@@ -148,4 +149,27 @@ def session_recap(req: SessionRecapRequest):
 @router.get("/api/dashboard/{user_id}")
 def get_dashboard(user_id: str):
     """Get aggregated dashboard data for a user."""
-    return get_dashboard_data(user_id)
+    data = get_dashboard_data(user_id)
+    diary_entries = get_diary_entries(user_id)
+    data["diary_count"] = len(diary_entries)
+
+    # Progress summary — compare first vs last completed session
+    trend = data.get("questionnaire_trend", [])
+    completed = [s for s in trend if s.get("post") is not None]
+    if len(completed) >= 2:
+        first_delta = completed[0]["post"] - completed[0]["pre"]
+        last_delta = completed[-1]["post"] - completed[-1]["pre"]
+        total_growth = last_delta - first_delta
+        if total_growth > 0:
+            data["progress_summary"] = f"You've grown by {total_growth} points since your first session."
+        elif total_growth == 0:
+            data["progress_summary"] = "You've maintained steady wellness across your sessions."
+        else:
+            data["progress_summary"] = "Your journey has had ups and downs — that's completely normal."
+    elif len(completed) == 1:
+        delta = completed[0]["post"] - completed[0]["pre"]
+        data["progress_summary"] = f"Your first session showed a {'+' if delta > 0 else ''}{delta} point change."
+    else:
+        data["progress_summary"] = None
+
+    return data

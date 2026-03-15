@@ -68,7 +68,7 @@ function initBackground() {
 
         // Landscape terrain grid
         landscapeGrid = createLandscapeGrid(glyphAtlas);
-        landscapeGrid.position.set(0, -200, 0);
+        landscapeGrid.position.set(0, -360, 0);
         scene.add(landscapeGrid);
 
         // Sky system (stars, sun, moon, clouds, shooting stars)

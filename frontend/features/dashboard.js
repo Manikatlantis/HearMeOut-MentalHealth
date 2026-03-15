@@ -40,6 +40,8 @@ const dashboard = {
             ? Math.max(1, Math.ceil((new Date(d.latest_session) - new Date(d.first_session)) / 86400000))
             : 0;
 
+        const diaryCount = d.diary_count || 0;
+
         container.innerHTML = `
             <div class="dashboard-stats">
                 <div class="stat-card glass">
@@ -54,7 +56,18 @@ const dashboard = {
                     <span class="stat-value">${avgImprovement > 0 ? '+' : ''}${avgImprovement.toFixed(1)}</span>
                     <span class="stat-label">Avg Change</span>
                 </div>
+                <div class="stat-card glass">
+                    <span class="stat-value">${diaryCount}</span>
+                    <span class="stat-label">Diary Entries</span>
+                </div>
             </div>
+
+            ${d.progress_summary ? `
+                <div class="dashboard-progress-insight glass">
+                    <span class="progress-insight-icon">&#127793;</span>
+                    <span class="progress-insight-text">${this._escapeHtml(d.progress_summary)}</span>
+                </div>
+            ` : ''}
 
             <div class="dashboard-chart-section glass">
                 <h3 class="dashboard-chart-title">Wellness Score Trend</h3>
@@ -69,6 +82,10 @@ const dashboard = {
                     ? '<div class="chart-container radar-container"><canvas id="emotionRadar"></canvas><div id="radarTooltip" class="chart-tooltip"></div></div>'
                     : '<p class="dashboard-empty">Enable the camera during playback to track your emotional responses.</p>'}
             </div>
+
+            <button class="dashboard-diary-btn" onclick="dashboard.showDiary()">
+                &#128214; My Diary ${diaryCount > 0 ? '(' + diaryCount + ')' : ''}
+            </button>
         `;
 
         if (d.questionnaire_trend.length > 0) {
@@ -476,6 +493,47 @@ const dashboard = {
                 tip.style.opacity = '0';
             }
         }
+    },
+
+    // Show diary screen
+    async showDiary() {
+        showScreen('diaryScreen');
+        const container = document.getElementById('diaryContent');
+        if (!container) return;
+        container.innerHTML = '<p class="dashboard-loading">Loading diary...</p>';
+
+        try {
+            const resp = await fetch(`/api/diary/${getUserId()}`);
+            if (!resp.ok) throw new Error('Failed to load diary');
+            const data = await resp.json();
+            const entries = data.entries || [];
+
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="dashboard-empty">No diary entries yet. Complete a session and journal your thoughts!</p>';
+                return;
+            }
+
+            container.innerHTML = entries.map(e => `
+                <div class="diary-entry">
+                    <div class="diary-entry-header">
+                        <span class="diary-entry-type ${e.entry_type === 'ai_insight' ? 'diary-type-ai' : 'diary-type-user'}">
+                            ${e.entry_type === 'ai_insight' ? 'AI Insight' : 'My Note'}
+                        </span>
+                        <span class="diary-entry-date">${e.created_at ? new Date(e.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                    </div>
+                    <p class="diary-entry-content">${this._escapeHtml(e.content)}</p>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = '<p class="dashboard-loading">Unable to load diary.</p>';
+        }
+    },
+
+    _escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     },
 
     // Fallback horizontal bars when too few emotions for radar

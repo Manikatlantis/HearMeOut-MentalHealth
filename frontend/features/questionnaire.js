@@ -223,6 +223,9 @@ const questionnaire = {
         // Store it so other modules can access it
         sessionStorage.setItem('therapy_profile', JSON.stringify(therapyProfile));
 
+        // Apply mood-adaptive color theme
+        applyMoodTheme(answers.emotional_state);
+
         // Send to backend
         try {
             await fetch('/api/questionnaire', {
@@ -347,6 +350,15 @@ const questionnaire = {
             html += `<div class="recap-next"><strong>Next time:</strong> ${this.escapeHtml(recap.next_step)}</div>`;
         }
 
+        // Diary section
+        html += `
+            <div class="recap-diary-section">
+                <label>Journal your thoughts about this session:</label>
+                <textarea id="recapDiaryNote" class="recap-diary-textarea" placeholder="How did the music make you feel? What came up for you?"></textarea>
+                <button class="recap-diary-save" onclick="saveDiaryNote()">Save Note</button>
+            </div>
+        `;
+
         html += `
             <div class="recap-actions">
                 <div class="recap-refine-section">
@@ -375,6 +387,11 @@ const questionnaire = {
                 </button>
             </div>
         `;
+
+        // Auto-save AI insight as diary entry
+        if (recap.reflection) {
+            this._autoSaveAiInsight(recap);
+        }
         html += `</div>`;
         el.innerHTML = html;
 
@@ -410,6 +427,21 @@ const questionnaire = {
         `;
     },
 
+    _autoSaveAiInsight(recap) {
+        const sessionId = this.sessionId || localStorage.getItem('current_session_id') || 'default';
+        const insight = `${recap.headline || ''}\n\n${recap.reflection || ''}${recap.next_step ? '\n\nNext time: ' + recap.next_step : ''}`;
+        fetch('/api/diary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: getUserId(),
+                session_id: sessionId,
+                entry_type: 'ai_insight',
+                content: insight.trim()
+            })
+        }).catch(e => console.warn('Failed to auto-save AI insight:', e));
+    },
+
     escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -422,6 +454,75 @@ const questionnaire = {
 function selectMode(mode) {
     sessionStorage.setItem('hearmeout_mode', mode);
     showScreen('questionnairePreScreen');
+}
+
+// --- Mood-Adaptive Theme ---
+const MOOD_SCENE_COLORS = {
+    anxious:  { fog: 0x0a0f1f, primary: 0x60a5fa, secondary: 0x38bdf8, accent: 0x818cf8 },
+    sad:      { fog: 0x1a1408, primary: 0xfbbf24, secondary: 0xf59e0b, accent: 0xfde68a },
+    angry:    { fog: 0x1a0a0e, primary: 0xf43f5e, secondary: 0xe11d48, accent: 0xfda4af },
+    numb:     { fog: 0x12101f, primary: 0xc4b5fd, secondary: 0xa78bfa, accent: 0xe9d5ff },
+    neutral:  { fog: 0x0a1a18, primary: 0x2dd4bf, secondary: 0x14b8a6, accent: 0x99f6e4 },
+    hopeful:  { fog: 0x0a1a10, primary: 0x34d399, secondary: 0x10b981, accent: 0xa7f3d0 },
+};
+
+function applyMoodTheme(emotionalState) {
+    // Remove any existing mood class
+    document.body.className = document.body.className.replace(/\bmood-\S+/g, '').trim();
+    if (emotionalState) {
+        document.body.classList.add('mood-' + emotionalState);
+    }
+
+    // Update Three.js scene colors (fog, fireflies, landscape tint)
+    const colors = MOOD_SCENE_COLORS[emotionalState];
+    if (colors && typeof scene !== 'undefined' && scene && scene.fog) {
+        scene.fog.color.setHex(colors.fog);
+        if (typeof renderer !== 'undefined' && renderer) {
+            renderer.setClearColor(colors.fog, 0);
+        }
+        // Tint fireflies to mood palette
+        if (typeof fireflies !== 'undefined') {
+            const moodPrimary = new THREE.Color(colors.primary);
+            const moodSecondary = new THREE.Color(colors.secondary);
+            const moodAccent = new THREE.Color(colors.accent);
+            const moodColors = [moodPrimary, moodSecondary, moodAccent];
+            fireflies.forEach((ff, i) => {
+                if (ff.material && ff.material.color) {
+                    ff.material.color.copy(moodColors[i % moodColors.length]);
+                }
+            });
+        }
+    }
+}
+
+// --- Diary Note Save (from recap screen) ---
+async function saveDiaryNote() {
+    const textarea = document.getElementById('recapDiaryNote');
+    if (!textarea) return;
+    const content = textarea.value.trim();
+    if (!content) return;
+
+    const sessionId = questionnaire.sessionId || localStorage.getItem('current_session_id') || 'default';
+    try {
+        await fetch('/api/diary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: getUserId(),
+                session_id: sessionId,
+                entry_type: 'user_note',
+                content: content
+            })
+        });
+        const btn = document.querySelector('.recap-diary-save');
+        if (btn) {
+            btn.textContent = 'Saved!';
+            btn.style.borderColor = 'var(--teal)';
+            setTimeout(() => { btn.textContent = 'Save Note'; }, 2000);
+        }
+    } catch (e) {
+        console.warn('Failed to save diary note:', e);
+    }
 }
 
 // Helper to get or create user ID

@@ -35,8 +35,8 @@ function showScreen(id) {
     // Scroll to top when switching screens
     window.scrollTo(0, 0);
 
-    // Lock body scroll — all screens are fixed viewport overlays
-    document.body.style.overflow = 'hidden';
+    // Lock body scroll on fixed viewport screens, allow scroll on tall screens like landing
+    document.body.style.overflow = (id === 'landingScreen') ? 'auto' : 'hidden';
 
     // Render questionnaire questions when screens are shown
     if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
@@ -54,6 +54,27 @@ function showScreen(id) {
         meditationData = null;
         meditationSegmentIndex = 0;
         meditationPaused = false;
+    }
+
+    // Animate stat counters on landing page
+    if (id === 'landingScreen') {
+        const nums = screen.querySelectorAll('.land-stat-num[data-target]');
+        nums.forEach(el => {
+            const target = parseFloat(el.dataset.target);
+            const isFloat = target % 1 !== 0;
+            let frame = 0;
+            const totalFrames = 40;
+            const step = () => {
+                frame++;
+                const progress = frame / totalFrames;
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = target * eased;
+                el.textContent = isFloat ? current.toFixed(1) : Math.round(current);
+                if (frame < totalFrames) requestAnimationFrame(step);
+            };
+            el.textContent = isFloat ? '0.0' : '0';
+            requestAnimationFrame(step);
+        });
     }
 
     // Keep webcam overlay in sync with active screen
@@ -530,7 +551,14 @@ function reset() {
         questionnaire.postAnswers = null;
     }
 
-    showScreen('modeSelectScreen');
+    // Clear mood theme (CSS + Three.js)
+    document.body.className = document.body.className.replace(/\bmood-\S+/g, '').trim();
+    if (typeof scene !== 'undefined' && scene && scene.fog) {
+        scene.fog.color.setHex(0x080c1a);
+        if (typeof renderer !== 'undefined' && renderer) renderer.setClearColor(0x080c1a, 0);
+    }
+
+    showScreen('landingScreen');
 }
 
 // ---- Iterate Panel ----

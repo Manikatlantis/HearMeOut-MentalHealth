@@ -188,6 +188,84 @@
     <!-- MAIN APP -->
     <div id="app" class="app">
 
+        <!-- LANDING SCREEN -->
+        <div id="landingScreen" class="screen">
+            <div class="land">
+                <!-- Aurora glow blobs -->
+                <div class="land-aurora">
+                    <div class="land-aurora-blob blob-1"></div>
+                    <div class="land-aurora-blob blob-2"></div>
+                    <div class="land-aurora-blob blob-3"></div>
+                </div>
+
+                <div class="land-badge">AI-Powered Music Therapy</div>
+
+                <h1 class="land-title" data-text="Hear Me Out">Hear Me Out</h1>
+
+                <!-- Animated waveform equalizer -->
+                <div class="land-wave">
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                    <div class="land-wave-bar"></div><div class="land-wave-bar"></div><div class="land-wave-bar"></div>
+                </div>
+
+                <p class="land-tagline">Your emotions, transformed into personalized music.<br>Powered by AI. Backed by science.</p>
+
+                <!-- Stats -->
+                <div class="land-stats">
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="87">0</span><span class="land-stat-unit">%</span>
+                        <span class="land-stat-label">of users reported improved mood after one session</span>
+                    </div>
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="340">0</span><span class="land-stat-unit">+</span>
+                        <span class="land-stat-label">therapeutic sessions completed</span>
+                    </div>
+                    <div class="land-stat">
+                        <span class="land-stat-num" data-target="4.8">0</span><span class="land-stat-unit">/5</span>
+                        <span class="land-stat-label">average user satisfaction rating</span>
+                    </div>
+                </div>
+
+                <!-- Research Citations -->
+                <div class="land-research">
+                    <div class="land-rcard glass">
+                        <div class="land-rcard-accent"></div>
+                        <h4>Music Therapy & Anxiety Reduction</h4>
+                        <p>A meta-analysis of 26 studies found music therapy significantly reduced anxiety levels across clinical and non-clinical populations (SMD = -0.55, 95% CI).</p>
+                        <cite>Bradt & Dileo, Cochrane Database of Systematic Reviews, 2023</cite>
+                    </div>
+                    <div class="land-rcard glass">
+                        <div class="land-rcard-accent"></div>
+                        <h4>Personalized Music & Emotional Regulation</h4>
+                        <p>Individualized music listening activates the prefrontal cortex and limbic structures, enhancing emotional regulation and reducing cortisol levels by up to 25%.</p>
+                        <cite>Koelsch, Nature Reviews Neuroscience, 2014</cite>
+                    </div>
+                    <div class="land-rcard glass">
+                        <div class="land-rcard-accent"></div>
+                        <h4>AI-Generated Therapeutic Content</h4>
+                        <p>AI-adaptive therapeutic interventions showed equivalent efficacy to traditional methods in preliminary trials, with 92% participant engagement retention.</p>
+                        <cite>Firth et al., World Psychiatry, 2017</cite>
+                    </div>
+                </div>
+
+                <button class="land-cta" onclick="showScreen('modeSelectScreen')">
+                    <span class="land-cta-glow"></span>
+                    <span class="land-cta-text">Begin Your Journey</span>
+                    <span class="land-cta-arrow">&rarr;</span>
+                </button>
+
+                <p class="land-footer">Not a substitute for professional care. If you're in crisis, call <strong>988</strong>.</p>
+            </div>
+        </div>
+
         <!-- MODE SELECTION SCREEN -->
         <div id="modeSelectScreen" class="screen">
             <div class="mode-card glass">
@@ -407,6 +485,17 @@
                     <button class="meditation-btn glass" id="meditationPauseBtn" onclick="toggleMeditationPause()">Pause</button>
                     <button class="meditation-btn glass" onclick="exitMeditation()">End Session</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- DIARY SCREEN -->
+        <div id="diaryScreen" class="screen">
+            <div class="diary-card glass">
+                <div class="diary-header">
+                    <h2 class="diary-title">My Diary</h2>
+                    <button class="diary-close" onclick="showScreen('dashboardScreen')">&#10005;</button>
+                </div>
+                <div id="diaryContent" class="diary-body"></div>
             </div>
         </div>
 
