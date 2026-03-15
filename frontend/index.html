@@ -235,7 +235,7 @@
         </div>
 
         <!-- INPUT SCREEN -->
-        <div id="inputScreen" class="screen active">
+        <div id="inputScreen" class="screen">
             <div class="hero">
                 <div class="logo-glow"></div>
                 <h1 class="title glitch" data-text="Hear Me Out">Hear Me Out</h1>
@@ -392,6 +392,9 @@
                     <div class="meditation-progress-fill" id="meditationProgress"></div>
                 </div>
                 <div class="meditation-controls">
+                    <button class="meditation-btn glass" id="meditationWebcamBtn" onclick="toggleWebcam()">
+                        <span class="cv-icon">&#128247;</span> Camera
+                    </button>
                     <button class="meditation-btn glass" id="meditationPauseBtn" onclick="toggleMeditationPause()">Pause</button>
                     <button class="meditation-btn glass" onclick="exitMeditation()">End Session</button>
                 </div>

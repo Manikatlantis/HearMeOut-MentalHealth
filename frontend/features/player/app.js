@@ -32,6 +32,17 @@ function showScreen(id) {
     screen.offsetHeight; // reflow
     screen.style.animation = '';
 
+    // Scroll to top when switching screens
+    window.scrollTo(0, 0);
+
+    // Lock body scroll on screens that fill the viewport
+    const fixedScreens = ['modeSelectScreen', 'questionnairePreScreen', 'questionnairePostScreen'];
+    if (fixedScreens.includes(id)) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+
     // Render questionnaire questions when screens are shown
     if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
         questionnaire.renderQuestions('preQuestions');

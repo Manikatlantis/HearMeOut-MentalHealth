@@ -1641,6 +1641,22 @@ audio { display: none; }
 }
 
 /* ---- Mode Selection ---- */
+#modeSelectScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    max-width: none;
+    padding: 40px 20px;
+}
+#modeSelectScreen.active {
+    display: flex;
+}
 .mode-card {
     padding: 40px;
     text-align: center;
@@ -1706,6 +1722,24 @@ audio { display: none; }
 }
 
 /* ---- Questionnaire ---- */
+#questionnairePreScreen,
+#questionnairePostScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    max-width: none;
+    padding: 40px 20px;
+}
+#questionnairePreScreen.active,
+#questionnairePostScreen.active {
+    display: flex;
+}
 .q-card {
     padding: 32px;
     max-height: 85vh;
