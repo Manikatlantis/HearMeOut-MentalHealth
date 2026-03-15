@@ -241,6 +241,7 @@ const _gestureSuggestions = [
     { gesture: 'vocal_isolate', icon: '✌️', text: 'Peace — Vocal isolate' },
     { gesture: 'volume_up', icon: '✋↑', text: 'Raise hand — Volume up' },
     { gesture: 'volume_down', icon: '✋↓', text: 'Lower hand — Volume down' },
+    { gesture: 'reverb', icon: '👌', text: 'OK sign — Reverb' },
     { gesture: 'heart', icon: '🫶', text: 'Heart hands — Floating hearts' },
     { gesture: 'dbz_charge', icon: '🔮', text: 'Cup hands — Energy ball' }
 ];

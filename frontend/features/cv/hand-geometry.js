@@ -41,7 +41,8 @@ const handGeometry = {
         bass_heavy:    '#f472b6',
         vocal_isolate: '#2dd4bf',
         heart:         '#fb7185',
-        dbz_charge:    '#fbbf24'
+        dbz_charge:    '#fbbf24',
+        reverb:        '#a78bfa'
     },
     DEFAULT_COLOR: '#e2e8f0',
 

@@ -1516,14 +1516,15 @@ audio { display: none; }
     min-height: 60vh;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    overflow: hidden;
+    gap: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 .meditation-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 10px;
 }
 .meditation-title {
     font-family: 'Space Grotesk', sans-serif;
@@ -1581,6 +1582,11 @@ audio { display: none; }
 }
 .meditation-webcam-dock .webcam-overlay {
     border-radius: 50%;
+}
+/* Hide gesture UI in meditation — gestures don't control narration */
+.meditation-webcam-dock .effect-indicators,
+.meditation-webcam-dock .gesture-suggestion {
+    display: none !important;
 }
 
 /* Concentric breath rings around the camera */

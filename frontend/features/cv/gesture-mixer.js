@@ -129,6 +129,7 @@ function processGestures(results) {
         detectOpenPalm(lm);
         detectFistGesture(lm);
         detectPeaceSign(lm);
+        detectReverbGesture(lm);
     }
 
     // Two-hand gestures
@@ -218,6 +219,18 @@ function detectPeaceSign(lm) {
     }
 }
 
+function detectReverbGesture(lm) {
+    // "OK sign" — thumb tip touching index tip, other 3 fingers extended
+    const thumbIndexDist = distance2D(lm[4], lm[8]);
+    const middleUp = lm[12].y < lm[10].y;
+    const ringUp = lm[16].y < lm[14].y;
+    const pinkyUp = lm[20].y < lm[18].y;
+
+    if (thumbIndexDist < 0.06 && middleUp && ringUp && pinkyUp) {
+        gestureMixer.activeGestures.add('reverb');
+    }
+}
+
 function detectHeartGesture(hand1, hand2) {
     // Both thumb tips close
     const thumbDist = distance2D(hand1[4], hand2[4]);
@@ -285,7 +298,7 @@ function applyGesturesToEffects() {
     const g = gestureMixer.activeGestures;
 
     // Mode gestures (filter/distortion/reverb effects)
-    const hasMode = g.has('bass_heavy') || g.has('vocal_isolate') || g.has('open_palm');
+    const hasMode = g.has('bass_heavy') || g.has('vocal_isolate') || g.has('open_palm') || g.has('reverb');
     if (hasMode) {
         if (g.has('open_palm')) {
             setBestVersion();
@@ -293,6 +306,10 @@ function applyGesturesToEffects() {
             setBassBoost(gestureMixer._fistTightness || 0.7);
         } else if (g.has('vocal_isolate')) {
             setVocalIsolate(true);
+        }
+        // Reverb (OK sign) — can layer on top of other modes
+        if (g.has('reverb')) {
+            setReverbMix(0.6);
         }
     } else {
         // No mode gesture — reset filter/distortion/reverb but NOT volume
