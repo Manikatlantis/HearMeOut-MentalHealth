@@ -6,7 +6,7 @@ Mental health support shouldn't feel clinical or intimidating. **Hear Me Out** i
 
 Built for the **Mental Health (SKIPIT)** track — supporting mental well-being, accessibility to care, and early intervention through the universal language of music.
 
-> **Live Demo:** [hearmeoutai.com](https://hearmeoutai.com)
+> **Live Demo:** [hearmeoutai.com](https://hearmeout.ink)
 
 ---
 
@@ -26,7 +26,7 @@ Music therapy is clinically proven to reduce anxiety by up to 65%, alleviate sym
 ## Core Features
 
 ### AI Companion Chatbot
-A Claude-powered therapeutic chatbot guides users through emotional exploration in a warm, conversational flow. After 3-5 exchanges, it synthesizes the conversation into a structured **emotional profile** — extracting relationship dynamics, trigger events, core wounds, and specific imagery — that becomes the song generation prompt. The chatbot understands 24 distinct emotional domains (friendship loss, romantic breakup, grief, burnout, anxiety, shame, and more) with domain-specific therapeutic guidelines for each.
+A Claude-powered therapeutic chatbot guides users through emotional exploration in a warm, conversational flow. After suffiecient number of exchanges, it synthesizes the conversation into a structured **emotional profile** — extracting relationship dynamics, trigger events, core wounds, and specific imagery — that becomes the song generation prompt. The chatbot understands 24 distinct emotional domains (friendship loss, romantic breakup, grief, burnout, anxiety, shame, and more) with domain-specific therapeutic guidelines for each.
 
 The system also runs **real-time crisis detection** — if suicidal ideation or self-harm language is detected in any user input, an immediate full-screen intervention appears with the **988 Suicide & Crisis Lifeline**, Crisis Text Line, and international resources. User safety always takes priority.
 
@@ -77,8 +77,7 @@ A fully custom Three.js 3D background built entirely from **musical notation cha
 
 - **Glyph Atlas** — 15 musical characters rendered to an offscreen canvas sprite sheet with UV-mapped texture sampling
 - **Landscape Grid** — 250×80 grid of points using custom vertex/fragment shaders with procedural simplex noise (fractal Brownian motion) for terrain generation, ocean-like wave undulation, per-point sparkle effects, and HSV color cycling through aurora palette colors
-- **Sky System** — Star field, sun/moon arc paths driven by day cycle, shooting stars, and drifting cloud clusters
-- **Day/Night Cycle** — 120-second full cycle with 15 color temperature keyframes, kept within a deep dark aurora aesthetic
+- **Sky System** — Star field, sun/moon arc paths driven by day cycle, shooting stars, and drifting cloud clusters.
 
 A **cinematic fly-through camera** slowly glides through the terrain with lateral drift, vertical breathing, altitude variation, and periodic smoothstep look-around sweeps — creating a meditative, dreamlike atmosphere. Hand/face/mouse tracking layers parallax on top of the cinematic base.
 
