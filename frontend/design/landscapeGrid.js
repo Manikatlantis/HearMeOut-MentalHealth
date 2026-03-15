@@ -202,16 +202,40 @@ const LANDSCAPE_VERTEX_SHADER = `
     varying vec2 vUvScale;       // size of one cell in UV space
     varying vec3 vColor;
     varying float vOpacity;
+    varying float vSparklePhase; // for fragment sparkle effect
+
+    // --- HSV helpers for color cycling ---
+    vec3 rgb2hsv(vec3 c) {
+        vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
+        vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+        vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+        float d = q.x - min(q.w, q.y);
+        float e = 1.0e-10;
+        return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+    }
+
+    vec3 hsv2rgb(vec3 c) {
+        vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+    }
 
     void main() {
         // Compute UV offset for this glyph cell
-        // Atlas is a single row: col = glyphIndex, row = 0
         float col = aGlyphIndex;
         vUvOffset = vec2(col / uAtlasWidth, 0.0);
         vUvScale = vec2(1.0 / uAtlasWidth, 1.0);
 
-        vColor = color;  // from vertexColors (BufferAttribute 'color')
+        // --- Color cycling: slow hue rotation across the landscape ---
+        vec3 hsv = rgb2hsv(color);
+        hsv.x += sin(uTime * 0.1 + position.x * 0.002) * 0.15;
+        hsv.x = fract(hsv.x); // wrap hue to [0, 1]
+        vColor = hsv2rgb(hsv);
+
         vOpacity = aOpacity;
+
+        // Sparkle phase derived from position (deterministic per-point)
+        vSparklePhase = fract(position.x * 0.137 + position.z * 0.291);
 
         // Apply horizontal scroll by shifting x
         vec3 pos = position;
@@ -221,23 +245,24 @@ const LANDSCAPE_VERTEX_SHADER = `
         float gridWidth = ${(LANDSCAPE_COLS * GRID_SPACING_X).toFixed(1)};
         pos.x = mod(pos.x + gridWidth * 0.5, gridWidth) - gridWidth * 0.5;
 
+        // --- Ocean-like wave motion ---
+        // Primary rolling wave
+        pos.y += sin(pos.x * 0.008 + uTime * 0.8) * 25.0;
+        // Secondary cross-wave
+        pos.y += sin(pos.z * 0.012 + uTime * 1.2) * 15.0;
+        // Fine detail shimmer
+        pos.y += sin((pos.x + pos.z) * 0.03 + uTime * 2.5) * 5.0;
+
         // Bass energy: ripple the foreground upward
-        // Stronger effect on near rows (small z → large effect)
         float depthFactor = 1.0 - clamp(pos.z / ${(LANDSCAPE_ROWS * GRID_SPACING_Z).toFixed(1)}, 0.0, 1.0);
         pos.y += uBassEnergy * 15.0 * depthFactor * sin(pos.x * 0.05 + uTime * 4.0);
-
-        // Audio energy vibration (tiny jitter)
-        // Passed via uBassEnergy since it's the most prominent; the main
-        // energy uniform will be added in the integration step.
 
         vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
         gl_Position = projectionMatrix * mvPosition;
 
-        // Size attenuation: base size scaled by attribute, attenuated by distance
+        // Size attenuation
         float baseSize = 60.0;
         gl_PointSize = baseSize * (400.0 / -mvPosition.z);
-
-        // Clamp minimum size so far points don't disappear
         gl_PointSize = max(gl_PointSize, 2.5);
     }
 `;
@@ -250,18 +275,23 @@ const LANDSCAPE_FRAGMENT_SHADER = `
     varying vec2 vUvScale;
     varying vec3 vColor;
     varying float vOpacity;
+    varying float vSparklePhase;
 
     void main() {
         // Map gl_PointCoord [0,1]x[0,1] to the glyph cell in the atlas
-        vec2 uv = vUvOffset + gl_PointCoord * vUvScale;
+        vec2 uv = vUvOffset + vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y) * vUvScale;
 
         vec4 texel = texture2D(uAtlas, uv);
 
         // Discard fully transparent pixels (character whitespace)
         if (texel.a < 0.05) discard;
 
-        // Apply per-point color with emissive glow boost
-        vec3 glowColor = vColor * texel.rgb * 1.4;
+        // Sparkle: sharp brief flashes (~20% of points at any moment)
+        float sparkle = pow(max(0.0, sin(uTime * 3.0 + vSparklePhase * 6.28)), 8.0);
+        float brightness = 0.7 + 0.3 * sparkle;
+
+        // Apply per-point color with emissive glow boost + sparkle
+        vec3 glowColor = vColor * texel.rgb * 1.4 * brightness;
         gl_FragColor = vec4(glowColor, texel.a * vOpacity);
     }
 `;

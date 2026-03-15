@@ -110,7 +110,7 @@ const SKY_FRAGMENT_SHADER = `
     varying float vOpacity;
 
     void main() {
-        vec2 uv = vUvOffset + gl_PointCoord * vUvScale;
+        vec2 uv = vUvOffset + vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y) * vUvScale;
         vec4 texel = texture2D(uAtlas, uv);
         if (texel.a < 0.05) discard;
         vec3 glowColor = vColor * texel.rgb * 1.3;

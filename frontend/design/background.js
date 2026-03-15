@@ -159,7 +159,7 @@ function _spawnFireflies(count) {
                 varying vec3 vColor;
                 varying float vOpacity;
                 void main() {
-                    vec2 uv = vUvOffset + gl_PointCoord * vUvScale;
+                    vec2 uv = vUvOffset + vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y) * vUvScale;
                     vec4 texel = texture2D(uAtlas, uv);
                     if (texel.a < 0.05) discard;
                     vec3 glowColor = vColor * texel.rgb * 1.5;
@@ -603,9 +603,9 @@ function animate() {
     // Vertical bob (floating/breathing)
     const camBobY = Math.sin(time * (2 * Math.PI / 15)) * 30;
 
-    // Altitude variation — slow oscillation between skimming and panoramic
-    const altitudeBase = -200 + 80; // terrain base + offset above
-    const altitudeVariation = Math.sin(time * (2 * Math.PI / 40)) * 80 + 80;
+    // Altitude variation — hover just above terrain peaks, occasional slight rise
+    const altitudeBase = -200 + 30; // terrain base + small offset (skimming)
+    const altitudeVariation = Math.sin(time * (2 * Math.PI / 40)) * 30 + 30;
     const camBaseY = altitudeBase + altitudeVariation + camBobY;
 
     // --- Look-around sweeps (every 20-30 seconds) ---
@@ -669,7 +669,7 @@ function animate() {
     const lookDistance = 400;
     const lookTarget = new THREE.Vector3(
         camera.position.x + Math.sin(_lookAroundAngle) * lookDistance,
-        camera.position.y - 30, // slightly downward gaze toward terrain
+        camera.position.y - 15, // gaze toward horizon level
         camera.position.z - lookDistance
     );
     camera.lookAt(lookTarget);
@@ -755,6 +755,9 @@ function animate() {
 
         // Camera parallax — subtle landscape shift opposite to tracking offset (not cinematic base)
         landscapeGrid.position.x = -trackOffsetX * 8;
+
+        // Gentle Y-axis oscillation — slow perspective shift (not continuous spin)
+        landscapeGrid.rotation.y = Math.sin(time * (2 * Math.PI / 60)) * 0.018;
     }
 
     // --- Sky system ---
