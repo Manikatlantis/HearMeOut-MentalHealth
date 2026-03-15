@@ -22,7 +22,8 @@ const dashboard = {
             this.data = await resp.json();
             this.render();
         } catch (e) {
-            container.innerHTML = '<p class="dashboard-loading">Unable to load dashboard data.</p>';
+            console.error('Dashboard error:', e);
+            container.innerHTML = `<p class="dashboard-loading">Unable to load dashboard data. (${e.message})</p>`;
         }
     },
 

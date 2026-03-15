@@ -185,6 +185,11 @@
         </div>
     </div>
 
+    <!-- BACK BUTTON -->
+    <button id="backBtn" class="back-btn" onclick="goBack()" style="display:none">
+        <span>&larr;</span>
+    </button>
+
     <!-- MAIN APP -->
     <div id="app" class="app">
 
@@ -348,6 +353,9 @@
                     <button class="journey-toggle glass" onclick="dashboard.show()">
                         <span class="history-icon">&#128200;</span> My Journey
                     </button>
+                    <button class="journey-toggle glass" onclick="dashboard.showDiary()">
+                        <span class="history-icon">&#128214;</span> My Diary
+                    </button>
                 </div>
                 <div id="historyPanel" class="history-panel" style="display:none">
                     <div id="historyList" class="history-list"></div>
@@ -459,6 +467,11 @@
                 </div>
 
                 <button class="new-btn glass" onclick="reset()">+ New Song</button>
+
+                <button class="continue-btn glass" onclick="continueFromPlayer()">
+                    <span class="btn-text">Continue</span>
+                    <span class="btn-icon">&rarr;</span>
+                </button>
             </div>
         </div>
         <!-- MEDITATION SCREEN -->

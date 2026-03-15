@@ -32,6 +32,7 @@ body {
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    overscroll-behavior: none;
 }
 
 /* ---- Three.js Background ---- */
@@ -62,9 +63,9 @@ body {
     z-index: 10;
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 0 20px;
 }
 
 .screen {
@@ -570,6 +571,56 @@ audio { display: none; }
 .new-btn:hover {
     color: var(--text);
     background: var(--glass-hover);
+}
+
+/* ---- Back Button ---- */
+.back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(8, 12, 26, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(255,255,255,0.7);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.back-btn:hover {
+    background: rgba(45, 212, 191, 0.15);
+    border-color: rgba(45, 212, 191, 0.4);
+    color: #fff;
+}
+
+.continue-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 320px;
+    margin: 12px auto 0;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    border: 1px solid rgba(45, 212, 191, 0.4);
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.15), rgba(167, 139, 250, 0.12));
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.continue-btn:hover {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.25), rgba(167, 139, 250, 0.2));
+    border-color: var(--teal);
 }
 
 /* ============================================
@@ -1865,11 +1916,14 @@ audio { display: none; }
 }
 
 /* ---- Questionnaire ---- */
+#landingScreen,
+#modeSelectScreen,
 #inputScreen,
 #questionnairePreScreen,
 #questionnairePostScreen,
 #questionnaireResultScreen,
 #dashboardScreen,
+#diaryScreen,
 #loadingScreen,
 #playerScreen,
 #meditationScreen {
@@ -1887,11 +1941,18 @@ audio { display: none; }
     padding: 40px 20px;
     overflow-y: auto;
 }
+#landingScreen {
+    justify-content: flex-start;
+    padding-top: 0;
+}
+#landingScreen.active,
+#modeSelectScreen.active,
 #inputScreen.active,
 #questionnairePreScreen.active,
 #questionnairePostScreen.active,
 #questionnaireResultScreen.active,
 #dashboardScreen.active,
+#diaryScreen.active,
 #loadingScreen.active,
 #playerScreen.active,
 #meditationScreen.active {
@@ -2885,11 +2946,11 @@ audio { display: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 100vh;
-    padding: 60px 24px 40px;
+    padding: 40px 24px 40px;
     text-align: center;
-    overflow: hidden;
+    overflow: visible;
     animation: landFade 1.2s ease forwards;
 }
 
@@ -3368,6 +3429,7 @@ body.mood-hopeful #particleOverlay {
 /* Diary in recap screen */
 .recap-diary-section {
     margin-top: 20px;
+    margin-bottom: 20px;
     padding-top: 16px;
     border-top: 1px solid rgba(255,255,255,0.06);
 }

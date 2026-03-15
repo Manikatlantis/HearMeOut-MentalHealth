@@ -7,6 +7,7 @@ let isPlaying = false;
 let lyricsTimeline = [];
 let lyricsAnimFrame = null;
 let currentSessionId = null;
+let screenHistory = [];
 
 // ---- User Identity (anonymous UUID in localStorage) ----
 function getUserId() {
@@ -24,6 +25,12 @@ function getUserId() {
 
 // ---- Screen Management ----
 function showScreen(id) {
+    // Track screen history for back navigation
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen && currentScreen.id !== id) {
+        screenHistory.push(currentScreen.id);
+    }
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const screen = document.getElementById(id);
     screen.classList.add('active');
@@ -35,8 +42,14 @@ function showScreen(id) {
     // Scroll to top when switching screens
     window.scrollTo(0, 0);
 
-    // Lock body scroll on fixed viewport screens, allow scroll on tall screens like landing
-    document.body.style.overflow = (id === 'landingScreen') ? 'auto' : 'hidden';
+    // Lock body scroll — all screens are fixed overlays
+    document.body.style.overflow = 'hidden';
+
+    // Show/hide back button (hide on landing screen)
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.style.display = (id === 'landingScreen') ? 'none' : 'flex';
+    }
 
     // Render questionnaire questions when screens are shown
     if (id === 'questionnairePreScreen' && typeof questionnaire !== 'undefined') {
@@ -513,6 +526,34 @@ function saveEmotionData() {
 }
 
 // ---- Reset ----
+function goBack() {
+    if (screenHistory.length > 0) {
+        const prev = screenHistory.pop();
+        // Don't push to history when going back — call showScreen internals directly
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const screen = document.getElementById(prev);
+        if (screen) {
+            screen.classList.add('active');
+            const appEl = document.getElementById('app');
+            if (appEl) appEl.scrollTo(0, 0);
+        }
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.style.display = (prev === 'landingScreen') ? 'none' : 'flex';
+        }
+    } else {
+        showScreen('landingScreen');
+    }
+}
+
+function continueFromPlayer() {
+    if (typeof questionnaire !== 'undefined' && !questionnaire.postAnswers) {
+        showScreen('questionnairePostScreen');
+    } else {
+        showScreen('modeSelectScreen');
+    }
+}
+
 function reset() {
     const player = document.getElementById('audioPlayer');
     player.pause();
